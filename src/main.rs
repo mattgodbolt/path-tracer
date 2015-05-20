@@ -193,10 +193,18 @@ fn radiance<R: Rng>(scene: &Vec<Sphere>, ray: &Ray, depth: i32, rng: &mut R) -> 
         }
         match hit.sphere.material {
             Material::Diffuse => {
+                let r1 = rng.gen::<f64>() * 2.0 * std::f64::consts::PI;
+                let r2 = rng.gen::<f64>();
+                let r2s = r2.sqrt();
+                let w = n1;
+                let u = if n1.x.abs() > 0.1 { Vec3d::new(0.0, 1.0, 0.0) } else { Vec3d::new(1.0, 0.0, 0.0) }.cross(w);
+                let v = w.cross(u);
+                let d = u * r1.cos() * r2s + v * r1.sin() * r2s + w * (1.0 - r2).sqrt();
+                colour = hit.sphere.emission + colour * radiance(scene, &Ray::new(hitPos, d.normalized()), depth, rng);
             }, 
             Material::Specular => {
-                //let reflection = ray.direction - hitNormal * 2.0 * hitNormal.dot(ray.direction);
-                //colour = hit.sphere.emission + colour * radiance(scene, &Ray::new(hitPos, reflection), depth, rng);
+                let reflection = ray.direction - hitNormal * 2.0 * hitNormal.dot(ray.direction);
+                colour = hit.sphere.emission + colour * radiance(scene, &Ray::new(hitPos, reflection), depth, rng);
             },
             Material::Refractive => {
             }
@@ -260,7 +268,7 @@ fn main() {
 
     const Width: usize = 256;//1024;
     const Height: usize = 192;//768;
-    let Samps = 1;
+    let Samps = 64;
     let cameraPos = Vec3d::new(50.0, 52.0, 295.6);
     let cameraDir = Vec3d::new(0.0, -0.042612, -1.0);
     let camera = Ray::new(cameraPos, cameraDir.normalized());
