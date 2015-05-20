@@ -6,6 +6,8 @@ use std::io::prelude::*;
 extern crate rand;
 use rand::{Rng, XorShiftRng, SeedableRng};
 
+extern crate threadpool;
+
 mod path_tracer;
 use path_tracer::*;
 
@@ -99,7 +101,7 @@ fn radiance<R: Rng>(scene: &Vec<Sphere>, ray: &Ray, depth: i32, rng: &mut R) -> 
         let depth = depth + 1;
         if depth > 5 {
             let rand = rng.gen::<f64>();
-            if rand < max_reflectance {
+            if rand < max_reflectance && depth < 100 {
                colour = colour * (1.0 / max_reflectance);
             } else {
                 return hit.sphere.emission;
@@ -225,8 +227,10 @@ fn main() {
     let camera_x = Vec3d::new(WIDTH as f64 * 0.5135 / HEIGHT as f64, 0.0, 0.0);
     let camera_y = camera_x.cross(camera_dir).normalized() * 0.5135;
 
-    let mut output_file = File::create("image.ppm").unwrap();
-    write!(&mut output_file, "P3\n{} {}\n255\n", WIDTH, HEIGHT).unwrap();
+    let mut screen: Vec<Vec<Vec3d>> = Vec::with_capacity(HEIGHT);
+    for _y in 0..HEIGHT {
+        screen.push(Vec::with_capacity(WIDTH));
+    }
 
     for y in 0..HEIGHT {
         println!("Rendering ({} spp) {:.4}%...", samps * 4, 100.0 * y as f64 / HEIGHT as f64);
@@ -246,7 +250,14 @@ fn main() {
                     }
                 }
             }
-            sum = sum / (samps * 4) as f64;
+            screen[y].push(sum / (samps * 4) as f64);
+        }
+    }
+    let mut output_file = File::create("image.ppm").unwrap();
+    write!(&mut output_file, "P3\n{} {}\n255\n", WIDTH, HEIGHT).unwrap();
+    for y in 0..HEIGHT {
+        for x in 0..WIDTH {
+            let sum = screen[y][x];
             write!(&mut output_file, "{} {} {} ", to_int(sum.x), to_int(sum.y), to_int(sum.z)).unwrap();
         }
     }
