@@ -7,18 +7,7 @@ extern crate rand;
 use rand::{Rng, XorShiftRng, SeedableRng};
 
 mod path_tracer;
-use path_tracer::Vec3d;
-
-struct Ray {
-    origin: Vec3d,
-    direction: Vec3d
-}
-
-impl Ray {
-    fn new(origin: Vec3d, direction: Vec3d) -> Ray {
-        Ray { origin: origin, direction: direction }
-    }
-}
+use path_tracer::*;
 
 enum Material {
     Diffuse,
@@ -230,7 +219,7 @@ fn main() {
 
     const WIDTH: usize = 256;//1024;
     const HEIGHT: usize = 192;//768;
-    let samps = 64;
+    let samps = 512;
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
     let camera_dir = Vec3d::new(0.0, -0.042612, -1.0);
     let camera_x = Vec3d::new(WIDTH as f64 * 0.5135 / HEIGHT as f64, 0.0, 0.0);
