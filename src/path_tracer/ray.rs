@@ -1,5 +1,6 @@
 use path_tracer::Vec3d;
 
+#[derive(Debug,Clone,Copy)]
 pub struct Ray {
     pub origin: Vec3d,
     pub direction: Vec3d

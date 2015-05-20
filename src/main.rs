@@ -119,12 +119,12 @@ fn radiance<R: Rng>(scene: &Vec<Sphere>, ray: &Ray, depth: i32, rng: &mut R) -> 
                 let v = w.cross(u);
                 // construct the new direction
                 let new_dir = u * r1.cos() * r2s + v * r1.sin() * r2s + w * (1.0 - r2).sqrt();
-                colour = hit.sphere.emission + colour * radiance(scene, &Ray::new(hit_pos, new_dir.normalized()), depth, rng);
+                colour = colour * radiance(scene, &Ray::new(hit_pos, new_dir.normalized()), depth, rng);
             }, 
             Material::Specular => {
                 let reflection = ray.direction - hit_normal * 2.0 * hit_normal.dot(ray.direction);
                 let reflected_ray = Ray::new(hit_pos, reflection);
-                colour = hit.sphere.emission + colour * radiance(scene, &reflected_ray, depth, rng);
+                colour = colour * radiance(scene, &reflected_ray, depth, rng);
             },
             Material::Refractive => {
                 let reflection = ray.direction - hit_normal * 2.0 * hit_normal.dot(ray.direction);
@@ -137,7 +137,7 @@ fn radiance<R: Rng>(scene: &Vec<Sphere>, ray: &Ray, depth: i32, rng: &mut R) -> 
                 let cos2t = 1.0 - nnt * nnt * (1.0 - ddn * ddn);
                 if cos2t < 0.0 {
                     // Total internal reflection
-                    colour = hit.sphere.emission + colour * radiance(scene, &reflected_ray, depth, rng);
+                    colour = colour * radiance(scene, &reflected_ray, depth, rng);
                 } else {
                     let tbd = ddn * nnt + cos2t.sqrt();
                     let tbd = if into { tbd } else { -tbd };
@@ -152,7 +152,7 @@ fn radiance<R: Rng>(scene: &Vec<Sphere>, ray: &Ray, depth: i32, rng: &mut R) -> 
                     let p = 0.25 + 0.5 * re;
                     let rp = re / p;
                     let tp = tr / (1.0 - p);
-                    colour = hit.sphere.emission + colour * if depth > 2 {
+                    colour = colour * if depth > 2 {
                         if rng.gen::<f64>() < p {
                             radiance(scene, &reflected_ray, depth, rng) * rp
                         } else {
@@ -165,7 +165,7 @@ fn radiance<R: Rng>(scene: &Vec<Sphere>, ray: &Ray, depth: i32, rng: &mut R) -> 
                 }
             }
         }
-        colour
+        hit.sphere.emission + colour
     } else {
         Vec3d::zero()
     }
@@ -219,20 +219,19 @@ fn main() {
 
     const WIDTH: usize = 256;//1024;
     const HEIGHT: usize = 192;//768;
-    let samps = 512;
+    let samps = 16;
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
     let camera_dir = Vec3d::new(0.0, -0.042612, -1.0);
     let camera_x = Vec3d::new(WIDTH as f64 * 0.5135 / HEIGHT as f64, 0.0, 0.0);
     let camera_y = camera_x.cross(camera_dir).normalized() * 0.5135;
 
-    let mut rng = XorShiftRng::new_unseeded();
     let mut output_file = File::create("image.ppm").unwrap();
     write!(&mut output_file, "P3\n{} {}\n255\n", WIDTH, HEIGHT).unwrap();
 
     for y in 0..HEIGHT {
         println!("Rendering ({} spp) {:.4}%...", samps * 4, 100.0 * y as f64 / HEIGHT as f64);
         for x in 0..WIDTH {
-            rng.reseed([10, 200, 999999, y as u32]);
+            let mut rng = XorShiftRng::from_seed([10, 200, 999999, y as u32]);
             let mut sum = Vec3d::zero();
             for sx in 0..2 {
                 for sy in 0..2 {
@@ -242,10 +241,12 @@ fn main() {
                         let dir = camera_x * (((sx as f64 + 0.5 + dx)/2.0 + x as f64) / WIDTH as f64 - 0.5) +
                             camera_y * (((sy as f64 + 0.5 + dy)/2.0 + (HEIGHT - y - 1) as f64) / HEIGHT as f64  - 0.5) + camera_dir;
                         let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir.normalized());
-                        sum = sum + radiance(&scene, &jittered_ray, 0, &mut rng) / (samps * 4) as f64;
+                        let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
+                        sum = sum + sample
                     }
                 }
             }
+            sum = sum / (samps * 4) as f64;
             write!(&mut output_file, "{} {} {} ", to_int(sum.x), to_int(sum.y), to_int(sum.z)).unwrap();
         }
     }
