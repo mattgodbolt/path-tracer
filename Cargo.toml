@@ -1,7 +1,13 @@
 [package]
-name = "path-tracer"
+name = "path_tracer"
 version = "0.1.0"
+description = "Path tracer"
+license = "MIT"
 authors = ["Matt Godbolt <matt@godbolt.org>"]
+
+[[bin]]
+name = "path_tracer"
+path = "src/main.rs"
 
 [dependencies]
 rand = "0.3"
