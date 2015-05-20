@@ -1,3 +1,5 @@
+// Based on smallpt, http://www.kevinbeason.com/smallpt/ which is also licensed under
+// the MIT license.
 use std::fs::File;
 use std::io::prelude::*;
 use std::ops::{Add,Sub,Mul,Div};
