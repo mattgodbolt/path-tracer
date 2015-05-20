@@ -168,7 +168,6 @@ fn intersect<'a>(scene: &'a Vec<Sphere>, ray: &Ray) -> Option<HitRecord<'a>> {
     let mut result : Option<HitRecord<'a>> = None;
     for sph in scene.iter() {
         if let Some(dist) = sph.intersect(&ray) {
-            // TODO: what's the difference between Some(&x) and Some(ref x) ? the latter works
             if match result { None => true, Some(ref x) => dist < x.dist } {
                 result = Some(HitRecord { sphere: &sph, dist: dist });
             }
