@@ -84,9 +84,9 @@ struct HitRecord<'a> {
     dist: f64
 }
 
-fn intersect<'a>(scene: &'a Vec<Sphere>, ray: &Ray) -> Option<HitRecord<'a>> {
+fn intersect<'a>(scene: &'a [Sphere], ray: &Ray) -> Option<HitRecord<'a>> {
     let mut result : Option<HitRecord<'a>> = None;
-    for sph in scene.iter() {
+    for sph in scene {
         if let Some(dist) = sph.intersect(&ray) {
             if match result { None => true, Some(ref x) => dist < x.dist } {
                 result = Some(HitRecord { sphere: &sph, dist: dist });
@@ -96,7 +96,7 @@ fn intersect<'a>(scene: &'a Vec<Sphere>, ray: &Ray) -> Option<HitRecord<'a>> {
     result
 }
 
-fn radiance<R: Rng>(scene: &Vec<Sphere>, ray: &Ray, depth: i32, rng: &mut R) -> Vec3d {
+fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec3d {
     if let Some(hit) = intersect(&scene, &ray) {
         let hit_pos = ray.origin + ray.direction * hit.dist;
         let hit_normal = (hit_pos - hit.sphere.position).normalized();
@@ -252,9 +252,9 @@ fn main() {
                             let dy = random_samp(&mut rng);
                             let dir = camera_x * (((sx as f64 + 0.5 + dx)/2.0 + x as f64) / WIDTH as f64 - 0.5) +
             camera_y * (((sy as f64 + 0.5 + dy)/2.0 + (HEIGHT - y - 1) as f64) / HEIGHT as f64  - 0.5) + camera_dir;
-        let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir.normalized());
-        let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
-        sum = sum + sample;
+                            let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir.normalized());
+                            let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
+                            sum = sum + sample;
                         }
                     }
                 }
