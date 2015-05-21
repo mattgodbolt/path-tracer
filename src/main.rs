@@ -2,14 +2,16 @@
 // the MIT license.
 use std::fs::File;
 use std::io::prelude::*;
+use std::sync::Arc;
+use std::sync::mpsc::channel;
 
 extern crate rand;
 use rand::{Rng, XorShiftRng, SeedableRng};
 
 extern crate threadpool;
 use threadpool::ThreadPool;
-use std::sync::mpsc::channel;
-use std::sync::Arc;
+
+extern crate num_cpus;
 
 mod path_tracer;
 use path_tracer::*;
@@ -230,7 +232,9 @@ fn main() {
     let camera_x = Vec3d::new(WIDTH as f64 * 0.5135 / HEIGHT as f64, 0.0, 0.0);
     let camera_y = camera_x.cross(camera_dir).normalized() * 0.5135;
 
-    let pool = ThreadPool::new(4);
+    let num_threads = num_cpus::get();
+    println!("Using {} threads", num_threads);
+    let pool = ThreadPool::new(num_threads);
     let (tx, rx) = channel();
 
     for y in 0..HEIGHT {
