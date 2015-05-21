@@ -7,6 +7,9 @@ extern crate rand;
 use rand::{Rng, XorShiftRng, SeedableRng};
 
 extern crate threadpool;
+use threadpool::ThreadPool;
+use std::sync::mpsc::channel;
+use std::sync::Arc;
 
 mod path_tracer;
 use path_tracer::*;
@@ -189,7 +192,7 @@ fn main() {
     const BLUE : Vec3d = Vec3d { x: 0.25, y: 0.25, z: 0.75 };
     const GREY : Vec3d = Vec3d { x: 0.75, y: 0.75, z: 0.75 };
     const WHITE : Vec3d = Vec3d { x: 0.999, y: 0.999, z: 0.999 };
-    let scene = vec!{
+    let scene = Arc::new(vec!{
         Sphere::new(Material::Diffuse, 1e5, 
             Vec3d::new(1e5+1.0, 40.8, 81.6),
             BLACK, RED),
@@ -217,42 +220,57 @@ fn main() {
         Sphere::new(Material::Diffuse, 600.0, 
             Vec3d::new(50.0, 681.6 - 0.27, 81.6),
             Vec3d::new(12.0, 12.0, 12.0), BLACK),
-    };
+    });
 
     const WIDTH: usize = 256;//1024;
     const HEIGHT: usize = 192;//768;
-    let samps = 16;
+    let samps = 1024;
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
     let camera_dir = Vec3d::new(0.0, -0.042612, -1.0);
     let camera_x = Vec3d::new(WIDTH as f64 * 0.5135 / HEIGHT as f64, 0.0, 0.0);
     let camera_y = camera_x.cross(camera_dir).normalized() * 0.5135;
 
-    let mut screen: Vec<Vec<Vec3d>> = Vec::with_capacity(HEIGHT);
-    for _y in 0..HEIGHT {
-        screen.push(Vec::with_capacity(WIDTH));
-    }
+    let pool = ThreadPool::new(4);
+    let (tx, rx) = channel();
 
     for y in 0..HEIGHT {
-        println!("Rendering ({} spp) {:.4}%...", samps * 4, 100.0 * y as f64 / HEIGHT as f64);
-        for x in 0..WIDTH {
-            let mut rng = XorShiftRng::from_seed([10, 200, 999999, y as u32]);
-            let mut sum = Vec3d::zero();
-            for sx in 0..2 {
-                for sy in 0..2 {
-                    for _samp in 0..samps {
-                        let dx = random_samp(&mut rng);
-                        let dy = random_samp(&mut rng);
-                        let dir = camera_x * (((sx as f64 + 0.5 + dx)/2.0 + x as f64) / WIDTH as f64 - 0.5) +
-                            camera_y * (((sy as f64 + 0.5 + dy)/2.0 + (HEIGHT - y - 1) as f64) / HEIGHT as f64  - 0.5) + camera_dir;
-                        let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir.normalized());
-                        let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
-                        sum = sum + sample
+        let tx = tx.clone();
+        let scene = scene.clone();
+        pool.execute(move || {
+            let mut line = Vec::with_capacity(WIDTH);
+            for x in 0..WIDTH {
+                let mut rng = XorShiftRng::from_seed([10, 200, 999999, y as u32]);
+                let mut sum = Vec3d::zero();
+                for sx in 0..2 {
+                    for sy in 0..2 {
+                        for _samp in 0..samps {
+                            let dx = random_samp(&mut rng);
+                            let dy = random_samp(&mut rng);
+                            let dir = camera_x * (((sx as f64 + 0.5 + dx)/2.0 + x as f64) / WIDTH as f64 - 0.5) +
+            camera_y * (((sy as f64 + 0.5 + dy)/2.0 + (HEIGHT - y - 1) as f64) / HEIGHT as f64  - 0.5) + camera_dir;
+        let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir.normalized());
+        let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
+        sum = sum + sample;
+                        }
                     }
                 }
+                line.push(sum / (samps * 4) as f64);
             }
-            screen[y].push(sum / (samps * 4) as f64);
-        }
+            tx.send((y, line)).unwrap();
+        });
     }
+    let mut left = HEIGHT;
+    let mut screen : Vec<Vec<Vec3d>> = Vec::new();
+    for _y in 0..HEIGHT {
+        screen.push(Vec::new());
+    }
+    while left > 0 {
+        println!("Rendering ({} spp) {:.4}%...", samps * 4, 100.0 * (HEIGHT - left) as f64 / HEIGHT as f64);
+        let (y, line) = rx.recv().unwrap();
+        screen[y] = line;
+        left -= 1;
+    }
+    println!("Writing output");
     let mut output_file = File::create("image.ppm").unwrap();
     write!(&mut output_file, "P3\n{} {}\n255\n", WIDTH, HEIGHT).unwrap();
     for y in 0..HEIGHT {
