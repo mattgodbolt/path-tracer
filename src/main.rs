@@ -27,17 +27,17 @@ struct Sphere {
     radius: f64,
     position: Vec3d,
     emission: Vec3d,
-    colour: Vec3d
+    color: Vec3d
 }
 
 impl Sphere {
-    fn new(material: Material, radius: f64, position: Vec3d, emission: Vec3d, colour: Vec3d) -> Sphere {
+    fn new(material: Material, radius: f64, position: Vec3d, emission: Vec3d, color: Vec3d) -> Sphere {
         Sphere {
           material: material, 
           radius: radius, 
           position: position,
           emission: emission,
-          colour: colour
+          color: color
         }
     }
     fn intersect(&self, ray: &Ray) -> Option<f64> {
@@ -101,13 +101,13 @@ fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec
         let hit_pos = ray.origin + ray.direction * hit.dist;
         let hit_normal = (hit_pos - hit.sphere.position).normalized();
         let n1 = if hit_normal.dot(ray.direction) < 0.0 { hit_normal } else { hit_normal.neg() };
-        let mut colour = hit.sphere.colour;
-        let max_reflectance = colour.max_component();
+        let mut color = hit.sphere.color;
+        let max_reflectance = color.max_component();
         let depth = depth + 1;
         if depth > 5 {
             let rand = rng.gen::<f64>();
             if rand < max_reflectance && depth < 100 {
-               colour = colour * (1.0 / max_reflectance);
+               color = color * (1.0 / max_reflectance);
             } else {
                 return hit.sphere.emission;
             }
@@ -126,12 +126,12 @@ fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec
                 let v = w.cross(u);
                 // construct the new direction
                 let new_dir = u * r1.cos() * r2s + v * r1.sin() * r2s + w * (1.0 - r2).sqrt();
-                colour = colour * radiance(scene, &Ray::new(hit_pos, new_dir.normalized()), depth, rng);
+                color = color * radiance(scene, &Ray::new(hit_pos, new_dir.normalized()), depth, rng);
             }, 
             Material::Specular => {
                 let reflection = ray.direction - hit_normal * 2.0 * hit_normal.dot(ray.direction);
                 let reflected_ray = Ray::new(hit_pos, reflection);
-                colour = colour * radiance(scene, &reflected_ray, depth, rng);
+                color = color * radiance(scene, &reflected_ray, depth, rng);
             },
             Material::Refractive => {
                 let reflection = ray.direction - hit_normal * 2.0 * hit_normal.dot(ray.direction);
@@ -144,7 +144,7 @@ fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec
                 let cos2t = 1.0 - nnt * nnt * (1.0 - ddn * ddn);
                 if cos2t < 0.0 {
                     // Total internal reflection
-                    colour = colour * radiance(scene, &reflected_ray, depth, rng);
+                    color = color * radiance(scene, &reflected_ray, depth, rng);
                 } else {
                     let tbd = ddn * nnt + cos2t.sqrt();
                     let tbd = if into { tbd } else { -tbd };
@@ -159,7 +159,7 @@ fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec
                     let p = 0.25 + 0.5 * re;
                     let rp = re / p;
                     let tp = tr / (1.0 - p);
-                    colour = colour * if depth > 2 {
+                    color = color * if depth > 2 {
                         if rng.gen::<f64>() < p {
                             radiance(scene, &reflected_ray, depth, rng) * rp
                         } else {
@@ -172,7 +172,7 @@ fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec
                 }
             }
         }
-        hit.sphere.emission + colour
+        hit.sphere.emission + color
     } else {
         Vec3d::zero()
     }
