@@ -1,6 +1,7 @@
 // Based on smallpt, http://www.kevinbeason.com/smallpt/ which is also licensed under
 // the MIT license.
 use std::fs::File;
+use std::io::BufWriter;
 use std::io::prelude::*;
 use std::sync::Arc;
 use std::sync::mpsc::channel;
@@ -226,7 +227,7 @@ fn main() {
 
     const WIDTH: usize = 256;//1024;
     const HEIGHT: usize = 192;//768;
-    let samps = 1024;
+    let samps = 1;
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
     let camera_dir = Vec3d::new(0.0, -0.042612, -1.0);
     let camera_x = Vec3d::new(WIDTH as f64 * 0.5135 / HEIGHT as f64, 0.0, 0.0);
@@ -275,12 +276,13 @@ fn main() {
         left -= 1;
     }
     println!("Writing output");
-    let mut output_file = File::create("image.ppm").unwrap();
-    write!(&mut output_file, "P3\n{} {}\n255\n", WIDTH, HEIGHT).unwrap();
+    let output_file = File::create("image.ppm").unwrap();
+    let mut writer = BufWriter::new(output_file);
+    write!(&mut writer, "P3\n{} {}\n255\n", WIDTH, HEIGHT).unwrap();
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
             let sum = screen[y][x];
-            write!(&mut output_file, "{} {} {} ", to_int(sum.x), to_int(sum.y), to_int(sum.z)).unwrap();
+            write!(&mut writer, "{} {} {} ", to_int(sum.x), to_int(sum.y), to_int(sum.z)).unwrap();
         }
     }
 }
