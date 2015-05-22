@@ -107,7 +107,7 @@ fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec
         let depth = depth + 1;
         if depth > 5 {
             let rand = rng.gen::<f64>();
-            if rand < max_reflectance && depth < 100 {
+            if rand < max_reflectance && depth < 500 { // Rust's stack blows up ~600 on my machine
                colour = colour * (1.0 / max_reflectance);
             } else {
                 return hit.sphere.emission;
