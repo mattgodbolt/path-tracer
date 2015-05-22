@@ -244,7 +244,7 @@ fn main() {
         pool.execute(move || {
             let mut line = Vec::with_capacity(WIDTH);
             for x in 0..WIDTH {
-                let mut rng = XorShiftRng::from_seed([10, 200, 999999, y as u32]);
+                let mut rng = XorShiftRng::from_seed([1 + y as u32, 1 + (y * y) as u32, 1 + y as u32, 1 + y as u32]);
                 let mut sum = Vec3d::zero();
                 for sx in 0..2 {
                     for sy in 0..2 {
@@ -270,7 +270,7 @@ fn main() {
         screen.push(Vec::new());
     }
     while left > 0 {
-        println!("Rendering ({} spp) {:.4}%...", samps * 4, 100.0 * (HEIGHT - left) as f64 / HEIGHT as f64);
+        print!("Rendering ({} spp) {:.4}%...\r", samps * 4, 100.0 * (HEIGHT - left) as f64 / HEIGHT as f64);
         let (y, line) = rx.recv().unwrap();
         screen[y] = line;
         left -= 1;
