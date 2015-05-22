@@ -225,8 +225,8 @@ fn main() {
             Vec3d::new(12.0, 12.0, 12.0), BLACK),
     });
 
-    const WIDTH: usize = 256;//1024;
-    const HEIGHT: usize = 192;//768;
+    const WIDTH: usize = 1024;
+    const HEIGHT: usize = 768;
     let samps = 1;
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
     let camera_dir = Vec3d::new(0.0, -0.042612, -1.0);
