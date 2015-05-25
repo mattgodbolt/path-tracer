@@ -2,6 +2,7 @@
 // the MIT license.
 use std::fs::File;
 use std::io::BufWriter;
+use std::io;
 use std::io::prelude::*;
 use std::sync::Arc;
 use std::sync::mpsc::channel;
@@ -207,6 +208,8 @@ fn main() {
                                                   "Filename to output to");
         ap.parse_args_or_exit();
     }
+    samps = samps / 4;
+    if samps < 1 { samps = 1; }
     const BLACK : Vec3d = Vec3d { x: 0.0, y: 0.0, z: 0.0 };
     const RED : Vec3d = Vec3d { x: 0.75, y: 0.25, z: 0.25 };
     const BLUE : Vec3d = Vec3d { x: 0.25, y: 0.25, z: 0.75 };
@@ -272,11 +275,11 @@ fn main() {
                             let dir = (camera_x * dir_x + camera_y * dir_y + camera_dir).normalized();
                             let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir);
                             let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
-                            sum = sum + sample.clamp();
+                            sum = sum + sample;
                         }
                     }
                 }
-                line.push(sum / (samps * 4) as f64);
+                line.push((sum / (samps * 4) as f64).clamp());
             }
             tx.send((y, line)).unwrap();
         });
@@ -288,6 +291,7 @@ fn main() {
     }
     while left > 0 {
         print!("Rendering ({} spp) {:.4}%...\r", samps * 4, 100.0 * (height - left) as f64 / height as f64);
+        io::stdout().flush().ok().expect("Could not flush stdout");
         let (y, line) = rx.recv().unwrap();
         screen[y] = line;
         left -= 1;
