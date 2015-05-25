@@ -213,7 +213,7 @@ fn main() {
             BLACK, GREY),
         Sphere::new(Material::Diffuse, 1e5, 
             Vec3d::new(50.0, -1e5 + 81.6, 81.6),
-            BLACK, RED),
+            BLACK, GREY),
         Sphere::new(Material::Specular, 16.5, 
             Vec3d::new(27.0, 16.5, 47.0),
             BLACK, WHITE),
@@ -243,17 +243,20 @@ fn main() {
         let scene = scene.clone();
         pool.execute(move || {
             let mut line = Vec::with_capacity(WIDTH);
+            let mut rng = XorShiftRng::from_seed([1 + (y * y) as u32, 0x193a6754, 0x15aac60d, 0xb017f00d]);
             for x in 0..WIDTH {
-                let mut rng = XorShiftRng::from_seed([1 + y as u32, 1 + (y * y) as u32, 1 + y as u32, 1 + y as u32]);
                 let mut sum = Vec3d::zero();
                 for sx in 0..2 {
                     for sy in 0..2 {
                         for _samp in 0..samps {
-                            let dx = 0.0;//random_samp(&mut rng);
-                            let dy = 0.0;//random_samp(&mut rng);
-                            let dir = camera_x * (((sx as f64 + 0.5 + dx)/2.0 + x as f64) / WIDTH as f64 - 0.5) +
-            camera_y * (((sy as f64 + 0.5 + dy)/2.0 + (HEIGHT - y - 1) as f64) / HEIGHT as f64  - 0.5) + camera_dir;
-                            let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir.normalized());
+                            let dx = random_samp(&mut rng);
+                            let dy = random_samp(&mut rng);
+                            let sub_x = (sx as f64 + 0.5 + dx) / 2.0;
+                            let dir_x = (sub_x + x as f64) / WIDTH as f64 - 0.5;
+                            let sub_y = (sy as f64 + 0.5 + dy) / 2.0;
+                            let dir_y = (sub_y + (HEIGHT -y - 1) as f64) / HEIGHT as f64 - 0.5;
+                            let dir = (camera_x * dir_x + camera_y * dir_y + camera_dir).normalized();
+                            let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir);
                             let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
                             sum = sum + sample.clamp();
                         }
