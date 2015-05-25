@@ -7,6 +7,16 @@ pub struct Vec3d {
     pub z: f64
 }
 
+pub trait Clamp {
+    fn clamp(self) -> Self;
+}
+
+impl Clamp for f64 {
+    fn clamp(self) -> f64 {
+        if self < 0.0 { 0.0 } else if self > 1.0 { 1.0 } else { self }
+    }
+}
+
 impl Vec3d {
     pub fn normalized(self) -> Vec3d {
         self / self.dot(self).sqrt()
@@ -34,6 +44,9 @@ impl Vec3d {
     }
     pub fn neg(self) -> Vec3d {
         Vec3d { x: -self.x, y: -self.y, z: -self.z }
+    }
+    pub fn clamp(self) -> Vec3d {
+        Vec3d { x: self.x.clamp(), y: self.y.clamp(), z: self.z.clamp() }
     }
 }
 

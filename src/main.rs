@@ -249,13 +249,13 @@ fn main() {
                 for sx in 0..2 {
                     for sy in 0..2 {
                         for _samp in 0..samps {
-                            let dx = random_samp(&mut rng);
-                            let dy = random_samp(&mut rng);
+                            let dx = 0.0;//random_samp(&mut rng);
+                            let dy = 0.0;//random_samp(&mut rng);
                             let dir = camera_x * (((sx as f64 + 0.5 + dx)/2.0 + x as f64) / WIDTH as f64 - 0.5) +
             camera_y * (((sy as f64 + 0.5 + dy)/2.0 + (HEIGHT - y - 1) as f64) / HEIGHT as f64  - 0.5) + camera_dir;
                             let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir.normalized());
                             let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
-                            sum = sum + sample;
+                            sum = sum + sample.clamp();
                         }
                     }
                 }
@@ -275,7 +275,7 @@ fn main() {
         screen[y] = line;
         left -= 1;
     }
-    println!("Writing output");
+    println!("\nWriting output");
     let output_file = File::create("image.ppm").unwrap();
     let mut writer = BufWriter::new(output_file);
     write!(&mut writer, "P3\n{} {}\n255\n", WIDTH, HEIGHT).unwrap();
