@@ -14,6 +14,9 @@ use threadpool::ThreadPool;
 
 extern crate num_cpus;
 
+extern crate argparse;
+use argparse::{ArgumentParser, Store};
+
 mod path_tracer;
 use path_tracer::*;
 
@@ -190,6 +193,20 @@ fn to_int(v: f64) -> u8 {
 }
 
 fn main() {
+    let mut samps = 1;
+    let mut width = 1024;
+    let mut height = 768;
+    let mut output_filename = "image.ppm".to_string();
+    {
+        let mut ap = ArgumentParser::new();
+        ap.set_description("Render a simple image");
+        ap.refer(&mut samps).add_option(&["-s", "--samples"], Store, "Number of samples");
+        ap.refer(&mut height).add_option(&["-h", "--height"], Store, "Height");
+        ap.refer(&mut width).add_option(&["-w", "--width"], Store, "Width");
+        ap.refer(&mut output_filename).add_option(&["-o", "--output"], Store, 
+                                                  "Filename to output to");
+        ap.parse_args_or_exit();
+    }
     const BLACK : Vec3d = Vec3d { x: 0.0, y: 0.0, z: 0.0 };
     const RED : Vec3d = Vec3d { x: 0.75, y: 0.25, z: 0.25 };
     const BLUE : Vec3d = Vec3d { x: 0.25, y: 0.25, z: 0.75 };
@@ -225,12 +242,9 @@ fn main() {
             Vec3d::new(12.0, 12.0, 12.0), BLACK),
     });
 
-    const WIDTH: usize = 1024;
-    const HEIGHT: usize = 768;
-    let samps = 1;
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
     let camera_dir = Vec3d::new(0.0, -0.042612, -1.0);
-    let camera_x = Vec3d::new(WIDTH as f64 * 0.5135 / HEIGHT as f64, 0.0, 0.0);
+    let camera_x = Vec3d::new(width as f64 * 0.5135 / height as f64, 0.0, 0.0);
     let camera_y = camera_x.cross(camera_dir).normalized() * 0.5135;
 
     let num_threads = num_cpus::get();
@@ -238,13 +252,13 @@ fn main() {
     let pool = ThreadPool::new(num_threads);
     let (tx, rx) = channel();
 
-    for y in 0..HEIGHT {
+    for y in 0..height {
         let tx = tx.clone();
         let scene = scene.clone();
         pool.execute(move || {
-            let mut line = Vec::with_capacity(WIDTH);
+            let mut line = Vec::with_capacity(width);
             let mut rng = XorShiftRng::from_seed([1 + (y * y) as u32, 0x193a6754, 0x15aac60d, 0xb017f00d]);
-            for x in 0..WIDTH {
+            for x in 0..width {
                 let mut sum = Vec3d::zero();
                 for sx in 0..2 {
                     for sy in 0..2 {
@@ -252,9 +266,9 @@ fn main() {
                             let dx = random_samp(&mut rng);
                             let dy = random_samp(&mut rng);
                             let sub_x = (sx as f64 + 0.5 + dx) / 2.0;
-                            let dir_x = (sub_x + x as f64) / WIDTH as f64 - 0.5;
+                            let dir_x = (sub_x + x as f64) / width as f64 - 0.5;
                             let sub_y = (sy as f64 + 0.5 + dy) / 2.0;
-                            let dir_y = (sub_y + (HEIGHT -y - 1) as f64) / HEIGHT as f64 - 0.5;
+                            let dir_y = (sub_y + (height -y - 1) as f64) / height as f64 - 0.5;
                             let dir = (camera_x * dir_x + camera_y * dir_y + camera_dir).normalized();
                             let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir);
                             let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
@@ -267,23 +281,23 @@ fn main() {
             tx.send((y, line)).unwrap();
         });
     }
-    let mut left = HEIGHT;
+    let mut left = height;
     let mut screen : Vec<Vec<Vec3d>> = Vec::new();
-    for _y in 0..HEIGHT {
+    for _y in 0..height {
         screen.push(Vec::new());
     }
     while left > 0 {
-        print!("Rendering ({} spp) {:.4}%...\r", samps * 4, 100.0 * (HEIGHT - left) as f64 / HEIGHT as f64);
+        print!("Rendering ({} spp) {:.4}%...\r", samps * 4, 100.0 * (height - left) as f64 / height as f64);
         let (y, line) = rx.recv().unwrap();
         screen[y] = line;
         left -= 1;
     }
-    println!("\nWriting output");
-    let output_file = File::create("image.ppm").unwrap();
+    println!("\nWriting output to '{}'", output_filename);
+    let output_file = File::create(output_filename).unwrap();
     let mut writer = BufWriter::new(output_file);
-    write!(&mut writer, "P3\n{} {}\n255\n", WIDTH, HEIGHT).unwrap();
-    for y in 0..HEIGHT {
-        for x in 0..WIDTH {
+    write!(&mut writer, "P3\n{} {}\n255\n", width, height).unwrap();
+    for y in 0..height {
+        for x in 0..width {
             let sum = screen[y][x];
             write!(&mut writer, "{} {} {} ", to_int(sum.x), to_int(sum.y), to_int(sum.z)).unwrap();
         }
