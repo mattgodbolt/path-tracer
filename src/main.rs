@@ -246,7 +246,7 @@ fn main() {
     });
 
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
-    let camera_dir = Vec3d::new(0.0, -0.042612, -1.0);
+    let camera_dir = Vec3d::new(0.0, -0.042612, -1.0).normalized();
     let camera_x = Vec3d::new(width as f64 * 0.5135 / height as f64, 0.0, 0.0);
     let camera_y = camera_x.cross(camera_dir).normalized() * 0.5135;
 
