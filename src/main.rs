@@ -246,7 +246,7 @@ fn main() {
     });
 
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
-    let camera_dir = Vec3d::new(0.0, -0.042612, -1.0);
+    let camera_dir = Vec3d::new(0.0, -0.042612, -1.0).normalized();
     let camera_x = Vec3d::new(width as f64 * 0.5135 / height as f64, 0.0, 0.0);
     let camera_y = camera_x.cross(camera_dir).normalized() * 0.5135;
 
@@ -265,6 +265,7 @@ fn main() {
                 let mut sum = Vec3d::zero();
                 for sx in 0..2 {
                     for sy in 0..2 {
+                        let mut r = Vec3d::zero();
                         for _samp in 0..samps {
                             let dx = random_samp(&mut rng);
                             let dy = random_samp(&mut rng);
@@ -275,11 +276,12 @@ fn main() {
                             let dir = (camera_x * dir_x + camera_y * dir_y + camera_dir).normalized();
                             let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir);
                             let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
-                            sum = sum + sample;
+                            r = r + (sample / (samps as f64));
                         }
+                        sum = sum + (r.clamp() * 0.25);
                     }
                 }
-                line.push((sum / (samps * 4) as f64).clamp());
+                line.push(sum);
             }
             tx.send((y, line)).unwrap();
         });
