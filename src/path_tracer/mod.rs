@@ -91,7 +91,7 @@ pub fn intersect<'a>(scene: &'a [Sphere], ray: &Ray) -> Option<HitRecord<'a>> {
 }
 
 pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec3d {
-    if let Some(hit) = intersect(&scene, &ray) {
+    intersect(&scene, &ray).map_or(Vec3d::zero(), |hit| {
         let hit_pos = ray.origin + ray.direction * hit.dist;
         let hit_normal = (hit_pos - hit.sphere.position).normalized();
         let n1 = if hit_normal.dot(ray.direction) < 0.0 { hit_normal } else { hit_normal.neg() };
@@ -130,7 +130,7 @@ pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) ->
             Material::Refractive => {
                 let reflection = ray.direction - hit_normal * 2.0 * hit_normal.dot(ray.direction);
                 let reflected_ray = Ray::new(hit_pos, reflection);
-                let into = if hit_normal.dot(n1) > 0.0 { true } else { false };
+                let into = hit_normal.dot(n1) > 0.0;
                 let nc = 1.0;
                 let nt = 1.5;
                 let nnt = if into { nc/nt } else { nt/nc };
@@ -167,9 +167,7 @@ pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) ->
             }
         }
         hit.sphere.emission + colour
-    } else {
-        Vec3d::zero()
-    }
+    })
 }
 
 pub fn random_samp<T: Rng>(rng: &mut T) -> f64 {
