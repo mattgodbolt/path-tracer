@@ -93,7 +93,7 @@ fn intersect<'a>(scene: &'a [Sphere], ray: &Ray) -> Option<HitRecord<'a>> {
     let mut result : Option<HitRecord<'a>> = None;
     for sph in scene {
         if let Some(dist) = sph.intersect(&ray) {
-            if match result { None => true, Some(ref x) => dist < x.dist } {
+            if result.as_ref().map_or(true, |x| dist < x.dist) {
                 result = Some(HitRecord { sphere: &sph, dist: dist });
             }
         }
