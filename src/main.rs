@@ -1,22 +1,20 @@
 // Based on smallpt, http://www.kevinbeason.com/smallpt/ which is also licensed under
 // the MIT license.
+extern crate argparse;
+extern crate image;
+extern crate num_cpus;
+extern crate rand;
+extern crate threadpool;
+
+use argparse::{ArgumentParser, Store};
+use rand::{Rng, XorShiftRng, SeedableRng};
+use threadpool::ThreadPool;
+
 use std::fs::File;
-use std::io::BufWriter;
 use std::io;
 use std::io::prelude::*;
 use std::sync::Arc;
 use std::sync::mpsc::channel;
-
-extern crate rand;
-use rand::{Rng, XorShiftRng, SeedableRng};
-
-extern crate threadpool;
-use threadpool::ThreadPool;
-
-extern crate num_cpus;
-
-extern crate argparse;
-use argparse::{ArgumentParser, Store};
 
 mod path_tracer;
 use path_tracer::*;
@@ -197,7 +195,7 @@ fn main() {
     let mut samps = 1;
     let mut width = 1024;
     let mut height = 768;
-    let mut output_filename = "image.ppm".to_string();
+    let mut output_filename = "image.png".to_string();
     {
         let mut ap = ArgumentParser::new();
         ap.set_description("Render a simple image");
@@ -299,13 +297,13 @@ fn main() {
         left -= 1;
     }
     println!("\nWriting output to '{}'", output_filename);
-    let output_file = File::create(output_filename).unwrap();
-    let mut writer = BufWriter::new(output_file);
-    write!(&mut writer, "P3\n{} {}\n255\n", width, height).unwrap();
+    let mut image = image::ImageBuffer::new(width as u32, height as u32);
     for y in 0..height {
         for x in 0..width {
             let sum = screen[y][x];
-            write!(&mut writer, "{} {} {} ", to_int(sum.x), to_int(sum.y), to_int(sum.z)).unwrap();
+            image.put_pixel(x as u32, y as u32, image::Rgb([to_int(sum.x), to_int(sum.y), to_int(sum.z)]));
         }
     }
+    let mut output_file = File::create(output_filename).unwrap();
+    image::ImageRgb8(image).save(&mut output_file, image::PNG).unwrap();
 }
