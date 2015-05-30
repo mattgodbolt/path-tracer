@@ -6,12 +6,12 @@ extern crate num_cpus;
 extern crate rand;
 extern crate threadpool;
 
-use argparse::{ArgumentParser, Store};
+use argparse::{ArgumentParser, Store, StoreTrue};
 use rand::{XorShiftRng, SeedableRng};
 use threadpool::ThreadPool;
 
 use std::fs::File;
-use std::io;
+use std::io::{self, BufWriter};
 use std::io::prelude::*;
 use std::sync::Arc;
 use std::sync::mpsc::channel;
@@ -24,9 +24,10 @@ fn main() {
     let mut samps = 1;
     let mut width = 1024;
     let mut height = 768;
-    let mut output_filename = "image.png".to_string();
+    let mut output_filename = "".to_string();
     let mut num_threads = num_cpus::get();
     let mut seed = 0x193a6754;
+    let mut partial = false;
     {
         let mut ap = ArgumentParser::new();
         ap.set_description("Render a simple image");
@@ -38,10 +39,15 @@ fn main() {
         ap.refer(&mut num_threads).add_option(&["--num-threads"], Store,
                                               "Number of threads to use");
         ap.refer(&mut seed).add_option(&["--seed"], Store, "Random seed");
+        ap.refer(&mut partial).add_option(&["--partial"], StoreTrue,
+                                          "Output a partial render");
         ap.parse_args_or_exit();
     }
     samps = samps / 4;
     if samps < 1 { samps = 1; }
+    if output_filename == "" {
+        output_filename = if partial { "image.part" } else { "image.png" }.to_string();
+    }
     const BLACK : Vec3d = Vec3d { x: 0.0, y: 0.0, z: 0.0 };
     const RED : Vec3d = Vec3d { x: 0.75, y: 0.25, z: 0.25 };
     const BLUE : Vec3d = Vec3d { x: 0.25, y: 0.25, z: 0.75 };
@@ -129,14 +135,28 @@ fn main() {
         screen[y] = line;
         left -= 1;
     }
-    println!("\nWriting output to '{}'", output_filename);
-    let mut image = image::ImageBuffer::new(width as u32, height as u32);
-    for y in 0..height {
-        for x in 0..width {
-            let sum = screen[y][x];
-            image.put_pixel(x as u32, y as u32, image::Rgb([to_int(sum.x), to_int(sum.y), to_int(sum.z)]));
+    if !partial {
+        println!("\nWriting output to '{}'", output_filename);
+        let mut image = image::ImageBuffer::new(width as u32, height as u32);
+        for y in 0..height {
+            for x in 0..width {
+                let sum = screen[y][x];
+                image.put_pixel(x as u32, y as u32, image::Rgb([to_int(sum.x), to_int(sum.y), to_int(sum.z)]));
+            }
+        }
+        let mut output_file = File::create(output_filename).unwrap();
+        image::ImageRgb8(image).save(&mut output_file, image::PNG).unwrap();
+    } else {
+        println!("\nWriting partial output to '{}'", output_filename);
+        let mut writer = BufWriter::new(File::create(output_filename).unwrap());
+        write!(&mut writer, "{} {} {}\n", width, height, samps).unwrap();
+        for y in 0..height {
+            for x in 0..width {
+                let sum = screen[y][x];
+                if x != 0 { write!(&mut writer, " ").unwrap(); }
+                write!(&mut writer, "{} {} {}", sum.x, sum.y, sum.z).unwrap();
+            }
+            write!(&mut writer, "\n").unwrap();
         }
     }
-    let mut output_file = File::create(output_filename).unwrap();
-    image::ImageRgb8(image).save(&mut output_file, image::PNG).unwrap();
 }
