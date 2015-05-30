@@ -1,4 +1,4 @@
-use path_tracer::Vec3d;
+use vec3d::Vec3d;
 
 #[derive(Debug,Clone,Copy)]
 pub struct Ray {

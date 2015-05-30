@@ -16,7 +16,7 @@ use std::io::prelude::*;
 use std::sync::Arc;
 use std::sync::mpsc::channel;
 
-mod path_tracer;
+extern crate path_tracer;
 use path_tracer::*;
 
 
