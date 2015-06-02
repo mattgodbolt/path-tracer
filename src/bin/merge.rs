@@ -8,6 +8,20 @@ use std::fs::File;
 use std::io::{self, BufReader};
 use std::io::prelude::*;
 
+#[derive(Debug)]
+enum ImageError {
+    IoError(io::Error),
+    BadFileError(String)
+}
+use ImageError::*;
+
+impl From<io::Error> for ImageError {
+    fn from(e: io::Error) -> ImageError {
+        ImageError::IoError(e)
+    }
+}
+type Result<T> = std::result::Result<T, ImageError>;
+
 struct PartialImage {
     image : Vec<Vec<Vec3d>>,
     samples : i32,
@@ -42,7 +56,7 @@ impl PartialImage {
     }
 }
 
-fn load_file(name: &String) -> io::Result<PartialImage> {
+fn load_file(name: &String) -> Result<PartialImage> {
     let mut result : Vec<Vec<Vec3d>> = Vec::new();
     let file = BufReader::new(try!(File::open(&name))); 
     println!("Loading '{}'", name);
@@ -66,14 +80,12 @@ fn load_file(name: &String) -> io::Result<PartialImage> {
             vecs.push(Vec3d::new(x, y, z) * samples as f64);
         }
         if vecs.len() != width {
-            panic!("bad width"); // todo 
-            //return Err("Bad width");
+            return Err(BadFileError("Bad width".to_string()));
         }
         result.push(vecs);
     }
     if result.len() != height {
-        panic!("bad height"); // todo 
-        //return Err("Bad height");
+        return Err(BadFileError("Bad height".to_string()));
     }
     println!("Loaded ok");
     Ok(PartialImage { image: result, samples: samples })
