@@ -61,23 +61,25 @@ fn load_file(name: &String) -> Result<PartialImage> {
     let file = BufReader::new(try!(File::open(&name))); 
     println!("Loading '{}'", name);
     let mut line_iter = file.lines();
-    let first_line = line_iter.next().unwrap().ok().unwrap();
-    let mut first_line_words = first_line.split(' ').map(|x| x.parse::<i32>().unwrap());
-    let width = first_line_words.next().unwrap() as usize;
-    let height = first_line_words.next().unwrap() as usize;
-    let samples = first_line_words.next().unwrap(); // this is terrible
+    let first_line = try!(line_iter.next().unwrap());
+    let first_line : Vec<usize> = first_line.split(' ').filter_map(|x| x.parse().ok()).collect();
+    // Rust experimental branch would let us match on the vector.
+    if first_line.len() != 3 { return Err(BadFileError("Bad header".to_string())); }
+    let width = first_line[0];
+    let height = first_line[1];
+    let samples = first_line[2] as i32;
     println!("Found {} samples in {}x{} image", samples, width, height);
     for line in line_iter.filter_map(|x| x.ok()) {
         let mut vecs : Vec<Vec3d> = Vec::new();
-        let mut split = line.split(' ').map(|x| x.parse::<f64>().unwrap());
+        let mut split = line.split(' ').filter_map(|x| x.parse::<f64>().ok());
         loop {
-            let x = match split.next() {
-                None => break,
-                Some(x) => x
-            };
-            let y : f64 = split.next().unwrap();
-            let z : f64 = split.next().unwrap();
-            vecs.push(Vec3d::new(x, y, z) * samples as f64);
+            match (split.next(), split.next(), split.next()) {
+                (None, _, _) => break,
+                (Some(x), Some(y), Some(z)) => {
+                    vecs.push(Vec3d::new(x, y, z) * samples as f64);
+                },
+                (_, _, _) => return Err(BadFileError("Bad line".to_string())),
+            }
         }
         if vecs.len() != width {
             return Err(BadFileError("Bad width".to_string()));
