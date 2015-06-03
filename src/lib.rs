@@ -16,6 +16,19 @@ pub enum Material {
     Refractive
 }
 
+pub struct Hit<'a> {
+    distance: f64,
+    pos: Vec3d,
+    normal: Vec3d,
+    material: &'a Material, 
+    emission: Vec3d,
+    colour: Vec3d
+}
+
+pub trait Renderable {
+    fn render(&self, ray: &Ray, nearest_hit: f64) -> Option<Hit>;
+}
+
 pub struct Sphere {
     material: Material,
     radius: f64,
@@ -53,6 +66,26 @@ impl Sphere {
     }
 }
 
+impl Renderable for Sphere {
+    fn render(&self, ray: &Ray, nearest_hit: f64) -> Option<Hit> {
+        if let Some(dist) = self.intersect(ray) {
+            if dist < nearest_hit { // todo: can I combine with the if let?
+                let pos = ray.origin + ray.direction * dist;
+                let normal = (pos - self.position).normalized();
+                return Some(Hit{
+                    distance: dist,
+                    pos: pos,
+                    normal: normal,
+                    material: &self.material,
+                    colour: self.colour,
+                    emission: self.emission
+                });
+            }
+        }
+        None
+    }
+}
+
 #[test]
 fn intersection() {
     let sphere = Sphere::new(
@@ -73,18 +106,11 @@ fn intersection() {
     }
 }
 
-pub struct HitRecord<'a> {
-    sphere: &'a Sphere,
-    dist: f64
-}
-
-pub fn intersect<'a>(scene: &'a [Sphere], ray: &Ray) -> Option<HitRecord<'a>> {
-    let mut result : Option<HitRecord<'a>> = None;
+fn intersect<'a>(scene: &'a [Sphere], ray: &Ray) -> Option<Hit<'a>> {
+    let mut result : Option<Hit<'a>> = None;
     for sph in scene {
-        if let Some(dist) = sph.intersect(&ray) {
-            if result.as_ref().map_or(true, |x| dist < x.dist) {
-                result = Some(HitRecord { sphere: &sph, dist: dist });
-            }
+        if let Some(hit) = sph.render(&ray, result.as_ref().map_or(std::f64::INFINITY, |x| x.distance)) {
+            result = Some(hit);
         }
     }
     result
@@ -92,10 +118,8 @@ pub fn intersect<'a>(scene: &'a [Sphere], ray: &Ray) -> Option<HitRecord<'a>> {
 
 pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec3d {
     intersect(&scene, &ray).map_or(Vec3d::zero(), |hit| {
-        let hit_pos = ray.origin + ray.direction * hit.dist;
-        let hit_normal = (hit_pos - hit.sphere.position).normalized();
-        let n1 = if hit_normal.dot(ray.direction) < 0.0 { hit_normal } else { hit_normal.neg() };
-        let mut colour = hit.sphere.colour;
+        let n1 = if hit.normal.dot(ray.direction) < 0.0 { hit.normal } else { hit.normal.neg() };
+        let mut colour = hit.colour;
         let max_reflectance = colour.max_component();
         let depth = depth + 1;
         if depth > 5 {
@@ -103,12 +127,12 @@ pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) ->
             if rand < max_reflectance && depth < 500 { // Rust's stack blows up ~600 on my machine
                colour = colour * (1.0 / max_reflectance);
             } else {
-                return hit.sphere.emission;
+                return hit.emission;
             }
         }
-        match hit.sphere.material {
+        match *hit.material {
             Material::Diffuse => {
-                // Get a random polar coordinate
+                // Get a random polar coordinate.
                 let r1 = rng.gen::<f64>() * 2.0 * PI;
                 let r2 = rng.gen::<f64>();
                 let r2s = r2.sqrt();
@@ -120,17 +144,17 @@ pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) ->
                 let v = w.cross(u);
                 // construct the new direction
                 let new_dir = u * r1.cos() * r2s + v * r1.sin() * r2s + w * (1.0 - r2).sqrt();
-                colour = colour * radiance(scene, &Ray::new(hit_pos, new_dir.normalized()), depth, rng);
+                colour = colour * radiance(scene, &Ray::new(hit.pos, new_dir.normalized()), depth, rng);
             }, 
             Material::Specular => {
-                let reflection = ray.direction - hit_normal * 2.0 * hit_normal.dot(ray.direction);
-                let reflected_ray = Ray::new(hit_pos, reflection);
+                let reflection = ray.direction - hit.normal * 2.0 * hit.normal.dot(ray.direction);
+                let reflected_ray = Ray::new(hit.pos, reflection);
                 colour = colour * radiance(scene, &reflected_ray, depth, rng);
             },
             Material::Refractive => {
-                let reflection = ray.direction - hit_normal * 2.0 * hit_normal.dot(ray.direction);
-                let reflected_ray = Ray::new(hit_pos, reflection);
-                let into = hit_normal.dot(n1) > 0.0;
+                let reflection = ray.direction - hit.normal * 2.0 * hit.normal.dot(ray.direction);
+                let reflected_ray = Ray::new(hit.pos, reflection);
+                let into = hit.normal.dot(n1) > 0.0;
                 let nc = 1.0;
                 let nt = 1.5;
                 let nnt = if into { nc/nt } else { nt/nc };
@@ -142,12 +166,12 @@ pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) ->
                 } else {
                     let tbd = ddn * nnt + cos2t.sqrt();
                     let tbd = if into { tbd } else { -tbd };
-                    let tdir = (ray.direction * nnt - hit_normal * tbd).normalized();
-                    let transmitted_ray = Ray::new(hit_pos, tdir);
+                    let tdir = (ray.direction * nnt - hit.normal * tbd).normalized();
+                    let transmitted_ray = Ray::new(hit.pos, tdir);
                     let a = nt - nc;
                     let b = nt + nc;
                     let r0 = (a * a) / (b * b);
-                    let c = 1.0 - if into { -ddn } else { tdir.dot(hit_normal) };
+                    let c = 1.0 - if into { -ddn } else { tdir.dot(hit.normal) };
                     let re = r0 + (1.0 - r0) * c * c * c * c * c;
                     let tr = 1.0 - re;
                     let p = 0.25 + 0.5 * re;
@@ -166,7 +190,7 @@ pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) ->
                 }
             }
         }
-        hit.sphere.emission + colour
+        hit.emission + colour
     })
 }
 
