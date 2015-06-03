@@ -32,16 +32,11 @@ impl PartialImage {
         PartialImage { image: Vec::new(), samples: 0 }
     }
 
-    // I'm totally unsure about whether this is taking additional copies.
     fn add(self, other: PartialImage) -> PartialImage {
         let image = if self.samples == 0 { other.image } else {
-            // A nicer way to do this would be ideal. This may well be doing lots of boundchecks.
-            let mut combined : Vec<Vec<Vec3d>> = self.image;
-            for y in 0..combined.len() {
-                for x in 0..combined[y].len() {
-                    combined[y][x] = combined[y][x] + other.image[y][x];
-                }
-            }
+            let combined = self.image.iter().zip(other.image.iter()).map(|(x, y)| { 
+                x.iter().zip(y.iter()).map(|(x, y)| { *x + *y }).collect()
+            }).collect();
             combined
         };
         let samples = self.samples + other.samples;
