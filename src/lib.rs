@@ -17,7 +17,6 @@ pub enum Material {
 }
 
 pub struct Hit<'a> {
-    distance: f64,
     pos: Vec3d,
     normal: Vec3d,
     material: &'a Material, 
@@ -26,7 +25,8 @@ pub struct Hit<'a> {
 }
 
 pub trait Renderable {
-    fn render(&self, ray: &Ray, nearest_hit: f64) -> Option<Hit>;
+    fn intersect(&self, ray: &Ray) -> Option<f64>;
+    fn get_hit(&self, ray: &Ray, dist: f64) -> Hit;
 }
 
 pub struct Sphere {
@@ -47,6 +47,20 @@ impl Sphere {
           colour: colour
         }
     }
+}
+
+impl Renderable for Sphere {
+    fn get_hit(&self, ray: &Ray, dist: f64) -> Hit {
+        let pos = ray.origin + ray.direction * dist;
+        let normal = (pos - self.position).normalized();
+        Hit {
+            pos: pos,
+            normal: normal,
+            material: &self.material,
+            colour: self.colour,
+            emission: self.emission
+        }
+    }
     fn intersect(&self, ray: &Ray) -> Option<f64> {
         let op = self.position - ray.origin;
         let b = op.dot(ray.direction);
@@ -63,26 +77,6 @@ impl Sphere {
         } else {
             None
         }
-    }
-}
-
-impl Renderable for Sphere {
-    fn render(&self, ray: &Ray, nearest_hit: f64) -> Option<Hit> {
-        if let Some(dist) = self.intersect(ray) {
-            if dist < nearest_hit { // todo: can I combine with the if let?
-                let pos = ray.origin + ray.direction * dist;
-                let normal = (pos - self.position).normalized();
-                return Some(Hit{
-                    distance: dist,
-                    pos: pos,
-                    normal: normal,
-                    material: &self.material,
-                    colour: self.colour,
-                    emission: self.emission
-                });
-            }
-        }
-        None
     }
 }
 
@@ -107,13 +101,23 @@ fn intersection() {
 }
 
 fn intersect<'a>(scene: &'a [Sphere], ray: &Ray) -> Option<Hit<'a>> {
-    let mut result : Option<Hit<'a>> = None;
+    let mut hit_dist = std::f64::INFINITY;
+    let mut hit_obj : Option<&Sphere> = None;
     for sph in scene {
-        if let Some(hit) = sph.render(&ray, result.as_ref().map_or(std::f64::INFINITY, |x| x.distance)) {
-            result = Some(hit);
+        if let Some(dist) = sph.intersect(&ray) {
+            if dist < hit_dist {
+                hit_dist = dist;
+                hit_obj = Some(&sph);
+            }
         }
     }
-    result
+
+    match hit_obj {
+        None => { None },
+        Some(obj) => {
+            Some(obj.get_hit(&ray, hit_dist))
+        }
+    }
 }
 
 pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec3d {
