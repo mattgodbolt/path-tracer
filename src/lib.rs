@@ -1,104 +1,18 @@
+mod geometry;
+mod material;
+mod math;
+mod renderable;
+
+pub use self::geometry::*;
+pub use self::material::Material;
+pub use self::math::*;
+
+use self::renderable::{Hit, Renderable};
+
 extern crate rand;
-
-pub use self::vec3d::Vec3d;
-pub use self::ray::Ray;
-
 use rand::Rng;
 
 use std::f64::consts::PI;
-
-mod vec3d;
-mod ray;
-
-pub enum Material {
-    Diffuse,
-    Specular,
-    Refractive
-}
-
-pub struct Hit<'a> {
-    pos: Vec3d,
-    normal: Vec3d,
-    material: &'a Material, 
-    emission: Vec3d,
-    colour: Vec3d
-}
-
-pub trait Renderable {
-    fn intersect(&self, ray: &Ray) -> Option<f64>;
-    fn get_hit(&self, ray: &Ray, dist: f64) -> Hit;
-}
-
-pub struct Sphere {
-    material: Material,
-    radius: f64,
-    position: Vec3d,
-    emission: Vec3d,
-    colour: Vec3d
-}
-
-impl Sphere {
-    pub fn new(material: Material, radius: f64, position: Vec3d, emission: Vec3d, colour: Vec3d) -> Sphere {
-        Sphere {
-          material: material, 
-          radius: radius, 
-          position: position,
-          emission: emission,
-          colour: colour
-        }
-    }
-}
-
-impl Renderable for Sphere {
-    fn get_hit(&self, ray: &Ray, dist: f64) -> Hit {
-        let pos = ray.origin + ray.direction * dist;
-        let normal = (pos - self.position).normalized();
-        Hit {
-            pos: pos,
-            normal: normal,
-            material: &self.material,
-            colour: self.colour,
-            emission: self.emission
-        }
-    }
-    fn intersect(&self, ray: &Ray) -> Option<f64> {
-        let op = self.position - ray.origin;
-        let b = op.dot(ray.direction);
-        let determinant = b * b - op.dot(op) + self.radius * self.radius;
-        if determinant < 0.0 { return None; }
-        let determinant = determinant.sqrt();
-        let t1 = b - determinant;
-        let t2 = b + determinant;
-        const EPSILON : f64 = 0.0001;
-        if t1 > EPSILON {
-            Some(t1)
-        } else if t2 > EPSILON {
-            Some(t2)
-        } else {
-            None
-        }
-    }
-}
-
-#[test]
-fn intersection() {
-    let sphere = Sphere::new(
-        Material::Diffuse, 
-        100.0, 
-        Vec3d::new(0.0, 0.0, 200.0), 
-        Vec3d::zero(), 
-        Vec3d::zero());
-    let ray = Ray::new(Vec3d::zero(), Vec3d::new(0.0, 0.0, 1.0));
-    match sphere.intersect(&ray) {
-        Some(x) => assert_eq!(x, 100.0),
-        None => panic!("unexpected")
-    }
-    let ray = Ray::new(Vec3d::zero(), Vec3d::new(0.0, 1.0, 0.0));
-    match sphere.intersect(&ray) {
-        Some(_) => panic!("unexpected"),
-        None => {}
-    }
-}
 
 fn intersect<'a>(scene: &'a [Sphere], ray: &Ray) -> Option<Hit<'a>> {
     let mut hit_dist = std::f64::INFINITY;
