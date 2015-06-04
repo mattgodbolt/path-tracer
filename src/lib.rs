@@ -119,5 +119,5 @@ pub fn random_samp<T: Rng>(rng: &mut T) -> f64 {
 
 pub fn to_int(v: f64) -> u8 {
     let ch = (v.powf(1.0/2.2) * 255.0 + 0.5) as i64;
-    if ch < 0 { 0 } else if ch > 255 { 255 } else { ch as u8 }
+    if ch < 0 { 0u8 } else if ch > 255 { 255u8 } else { ch as u8 }
 }
