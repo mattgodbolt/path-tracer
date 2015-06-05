@@ -109,13 +109,13 @@ fn main() {
                             let sub_x = (sx as f64 + 0.5 + dx) / 2.0;
                             let dir_x = (sub_x + x as f64) / width as f64 - 0.5;
                             let sub_y = (sy as f64 + 0.5 + dy) / 2.0;
-                            let dir_y = (sub_y + (height -y - 1) as f64) / height as f64 - 0.5;
+                            let dir_y = (sub_y + (height - y - 1) as f64) / height as f64 - 0.5;
                             let dir = (camera_x * dir_x + camera_y * dir_y + camera_dir).normalized();
                             let jittered_ray = Ray::new(camera_pos + dir * 140.0, dir);
                             let sample = radiance(&scene, &jittered_ray, 0, &mut rng);
-                            r = r + (sample / (samps as f64));
+                            r = r + (sample / samps as f64);
                         }
-                        sum = sum + (r.clamp() * 0.25);
+                        sum = sum + r.clamp() * 0.25;
                     }
                 }
                 line.push(sum);
