@@ -10,7 +10,7 @@ pub struct Hit<'a> {
     pub colour: Vec3d
 }
 
-pub trait Renderable {
+pub trait Renderable : Send + Sync {
     fn intersect(&self, ray: &Ray) -> Option<f64>;
     fn get_hit(&self, ray: &Ray, dist: f64) -> Hit;
 }

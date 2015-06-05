@@ -53,35 +53,35 @@ fn main() {
     const BLUE : Vec3d = Vec3d { x: 0.25, y: 0.25, z: 0.75 };
     const GREY : Vec3d = Vec3d { x: 0.75, y: 0.75, z: 0.75 };
     const WHITE : Vec3d = Vec3d { x: 0.999, y: 0.999, z: 0.999 };
-    let scene = Arc::new(vec!{
-        Sphere::new(Material::Diffuse, 1e5, 
-            Vec3d::new(1e5+1.0, 40.8, 81.6),
-            BLACK, RED),
-        Sphere::new(Material::Diffuse, 1e5, 
-            Vec3d::new(-1e5+99.0, 40.8, 81.6),
-            BLACK, BLUE),
-        Sphere::new(Material::Diffuse, 1e5, 
-            Vec3d::new(50.0, 40.8, 1e5),
-            BLACK, GREY),
-        Sphere::new(Material::Diffuse, 1e5, 
-            Vec3d::new(50.0, 40.8, -1e5 + 170.0),
-            BLACK, BLACK),
-        Sphere::new(Material::Diffuse, 1e5, 
-            Vec3d::new(50.0, 1e5, 81.6),
-            BLACK, GREY),
-        Sphere::new(Material::Diffuse, 1e5, 
-            Vec3d::new(50.0, -1e5 + 81.6, 81.6),
-            BLACK, GREY),
-        Sphere::new(Material::Specular, 16.5, 
-            Vec3d::new(27.0, 16.5, 47.0),
-            BLACK, WHITE),
-        Sphere::new(Material::Refractive, 16.5, 
-            Vec3d::new(73.0, 16.5, 78.0),
-            BLACK, WHITE),
-        Sphere::new(Material::Diffuse, 600.0, 
-            Vec3d::new(50.0, 681.6 - 0.27, 81.6),
-            Vec3d::new(12.0, 12.0, 12.0), BLACK),
-    });
+    let mut scene = Scene::new();
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+                                   Vec3d::new(1e5+1.0, 40.8, 81.6),
+                                   BLACK, RED)));
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+                                   Vec3d::new(-1e5+99.0, 40.8, 81.6),
+                                   BLACK, BLUE)));
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+                                   Vec3d::new(50.0, 40.8, 1e5),
+                                   BLACK, GREY)));
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+                                   Vec3d::new(50.0, 40.8, -1e5 + 170.0),
+                                   BLACK, BLACK)));
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+                                   Vec3d::new(50.0, 1e5, 81.6),
+                                   BLACK, GREY)));
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+                                   Vec3d::new(50.0, -1e5 + 81.6, 81.6),
+                                   BLACK, GREY)));
+    scene.add(Box::new(Sphere::new(Material::Specular, 16.5, 
+                                   Vec3d::new(27.0, 16.5, 47.0),
+                                   BLACK, WHITE)));
+    scene.add(Box::new(Sphere::new(Material::Refractive, 16.5, 
+                                   Vec3d::new(73.0, 16.5, 78.0),
+                                   BLACK, WHITE)));
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 600.0, 
+                                   Vec3d::new(50.0, 681.6 - 0.27, 81.6),
+                                   Vec3d::new(12.0, 12.0, 12.0), BLACK)));
+    let scene = Arc::new(scene);
 
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
     let camera_dir = Vec3d::new(0.0, -0.042612, -1.0).normalized();

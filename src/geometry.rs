@@ -22,6 +22,9 @@ pub struct Sphere {
     colour: Vec3d
 }
 
+unsafe impl Sync for Sphere {}
+unsafe impl Send for Sphere {}
+
 impl Sphere {
     pub fn new(material: Material, radius: f64, position: Vec3d, emission: Vec3d, colour: Vec3d) -> Sphere {
         Sphere {

@@ -2,40 +2,23 @@ mod geometry;
 mod material;
 mod math;
 mod renderable;
+mod scene;
 
 pub use self::geometry::*;
 pub use self::material::Material;
 pub use self::math::*;
+pub use self::scene::*;
 
-use self::renderable::{Hit, Renderable};
+use self::renderable::Renderable;
 
 extern crate rand;
 use rand::Rng;
 
 use std::f64::consts::PI;
 
-fn intersect<'a>(scene: &'a [Sphere], ray: &Ray) -> Option<Hit<'a>> {
-    let mut hit_dist = std::f64::INFINITY;
-    let mut hit_obj : Option<&Sphere> = None;
-    for sph in scene {
-        if let Some(dist) = sph.intersect(&ray) {
-            if dist < hit_dist {
-                hit_dist = dist;
-                hit_obj = Some(&sph);
-            }
-        }
-    }
 
-    match hit_obj {
-        None => { None },
-        Some(obj) => {
-            Some(obj.get_hit(&ray, hit_dist))
-        }
-    }
-}
-
-pub fn radiance<R: Rng>(scene: &[Sphere], ray: &Ray, depth: i32, rng: &mut R) -> Vec3d {
-    intersect(&scene, &ray).map_or(Vec3d::zero(), |hit| {
+pub fn radiance<R: Rng>(scene: &Scene, ray: &Ray, depth: i32, rng: &mut R) -> Vec3d {
+    scene.intersect(&ray).map_or(Vec3d::zero(), |hit| {
         let n1 = if hit.normal.dot(ray.direction) < 0.0 { hit.normal } else { hit.normal.neg() };
         let mut colour = hit.colour;
         let max_reflectance = colour.max_component();
