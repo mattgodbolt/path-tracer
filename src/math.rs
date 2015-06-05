@@ -101,6 +101,7 @@ impl Div<f64> for Vec3d {
 
     #[inline]
     fn div(self, other: f64) -> Vec3d {
-        Vec3d { x: self.x / other, y: self.y / other, z: self.z / other }
+        let recip = 1.0 / other;
+        Vec3d { x: self.x * recip, y: self.y * recip, z: self.z * recip }
     }
 }

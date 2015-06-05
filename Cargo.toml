@@ -13,3 +13,6 @@ image = "0.3"
 num_cpus = "0.2"
 rand = "0.3"
 threadpool = "0.1"
+
+[profile.release]
+lto = true
