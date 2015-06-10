@@ -1,6 +1,6 @@
 use material::Material;
 use renderable::{Hit,Renderable};
-use math::Vec3d;
+use math::{Vec3d,F64Rng};
 
 #[derive(Debug,Clone,Copy)]
 pub struct Ray {
@@ -19,7 +19,8 @@ pub struct Sphere {
     radius: f64,
     position: Vec3d,
     emission: Vec3d,
-    colour: Vec3d
+    colour: Vec3d,
+    emissive: bool,
 }
 
 unsafe impl Sync for Sphere {}
@@ -32,7 +33,8 @@ impl Sphere {
           radius: radius, 
           position: position,
           emission: emission,
-          colour: colour
+          colour: colour,
+          emissive: emission.max_component() > 0.0
         }
     }
 }
@@ -65,6 +67,10 @@ impl Renderable for Sphere {
         } else {
             None
         }
+    }
+    fn is_emissive(&self) -> bool { self.emissive }
+    fn random_pos(&self, rng: &mut F64Rng) -> Vec3d {
+        Vec3d::zero()
     }
 }
 

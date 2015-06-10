@@ -1,3 +1,4 @@
+extern crate rand;
 mod geometry;
 mod material;
 mod math;
@@ -11,31 +12,29 @@ pub use self::scene::*;
 
 use self::renderable::Renderable;
 
-extern crate rand;
-use rand::Rng;
 
 use std::f64::consts::PI;
 
-
-pub fn radiance<R: Rng>(scene: &Scene, ray: &Ray, depth: i32, rng: &mut R) -> Vec3d {
+pub fn radiance(scene: &Scene, ray: &Ray, depth: i32, rng: &mut F64Rng, emit: bool) -> Vec3d {
     scene.intersect(&ray).map_or(Vec3d::zero(), |hit| {
         let n1 = if hit.normal.dot(ray.direction) < 0.0 { hit.normal } else { hit.normal.neg() };
+        let mut emission = if emit { hit.emission } else { Vec3d::zero() };
         let mut colour = hit.colour;
         let max_reflectance = colour.max_component();
         let depth = depth + 1;
         if depth > 5 {
-            let rand = rng.gen::<f64>();
+            let rand = rng.next();
             if rand < max_reflectance && depth < 500 { // Rust's stack blows up ~600 on my machine
                colour = colour * (1.0 / max_reflectance);
             } else {
-                return hit.emission;
+                return emission;
             }
         }
         match *hit.material {
             Material::Diffuse => {
                 // Get a random polar coordinate.
-                let r1 = rng.gen::<f64>() * 2.0 * PI;
-                let r2 = rng.gen::<f64>();
+                let r1 = rng.next() * 2.0 * PI;
+                let r2 = rng.next();
                 let r2s = r2.sqrt();
                 // Create a coordinate system u,v,w local to the point, where the w is the normal
                 // pointing out of the sphere and the u and v are orthonormal to w.
@@ -45,12 +44,14 @@ pub fn radiance<R: Rng>(scene: &Scene, ray: &Ray, depth: i32, rng: &mut R) -> Ve
                 let v = w.cross(u);
                 // construct the new direction
                 let new_dir = u * r1.cos() * r2s + v * r1.sin() * r2s + w * (1.0 - r2).sqrt();
-                colour = colour * radiance(scene, &Ray::new(hit.pos, new_dir.normalized()), depth, rng);
+                let new_ray = Ray::new(hit.pos, new_dir.normalized());
+                emission = emission + scene.sample_lights(&new_ray, rng);
+                colour = colour * radiance(scene, &new_ray, depth, rng, false);
             }, 
             Material::Specular => {
                 let reflection = ray.direction - hit.normal * 2.0 * hit.normal.dot(ray.direction);
                 let reflected_ray = Ray::new(hit.pos, reflection);
-                colour = colour * radiance(scene, &reflected_ray, depth, rng);
+                colour = colour * radiance(scene, &reflected_ray, depth, rng, true);
             },
             Material::Refractive => {
                 let reflection = ray.direction - hit.normal * 2.0 * hit.normal.dot(ray.direction);
@@ -63,7 +64,7 @@ pub fn radiance<R: Rng>(scene: &Scene, ray: &Ray, depth: i32, rng: &mut R) -> Ve
                 let cos2t = 1.0 - nnt * nnt * (1.0 - ddn * ddn);
                 if cos2t < 0.0 {
                     // Total internal reflection
-                    colour = colour * radiance(scene, &reflected_ray, depth, rng);
+                    colour = colour * radiance(scene, &reflected_ray, depth, rng, true);
                 } else {
                     let tbd = ddn * nnt + cos2t.sqrt();
                     let tbd = if into { tbd } else { -tbd };
@@ -79,24 +80,24 @@ pub fn radiance<R: Rng>(scene: &Scene, ray: &Ray, depth: i32, rng: &mut R) -> Ve
                     let rp = re / p;
                     let tp = tr / (1.0 - p);
                     colour = colour * if depth > 2 {
-                        if rng.gen::<f64>() < p {
-                            radiance(scene, &reflected_ray, depth, rng) * rp
+                        if rng.next() < p {
+                            radiance(scene, &reflected_ray, depth, rng, true) * rp
                         } else {
-                            radiance(scene, &transmitted_ray, depth, rng) * tp
+                            radiance(scene, &transmitted_ray, depth, rng, true) * tp
                         }
                     } else {
-                        radiance(scene, &reflected_ray, depth, rng) * re +
-                            radiance(scene, &transmitted_ray, depth, rng) * tr
+                        radiance(scene, &reflected_ray, depth, rng, true) * re +
+                            radiance(scene, &transmitted_ray, depth, rng, true) * tr
                     }
                 }
             }
         }
-        hit.emission + colour
+        emission + colour
     })
 }
 
-pub fn random_samp<T: Rng>(rng: &mut T) -> f64 {
-    let r = 2.0 * rng.gen::<f64>();
+pub fn random_samp<T: F64Rng>(rng: &mut T) -> f64 {
+    let r = 2.0 * rng.next();
     if r < 1.0 { r.sqrt() - 1.0 } else { 1.0 - (2.0 - r).sqrt() }
 }
 

@@ -1,3 +1,4 @@
+use rand::{Rng, XorShiftRng};
 use std::ops::{Add,Sub,Mul,Div};
 
 #[derive(Debug,Clone,Copy)]
@@ -105,3 +106,14 @@ impl Div<f64> for Vec3d {
         Vec3d { x: self.x * recip, y: self.y * recip, z: self.z * recip }
     }
 }
+
+pub trait F64Rng {
+    fn next(&mut self) -> f64;
+}
+
+impl F64Rng for XorShiftRng {
+    fn next(&mut self) -> f64 {
+        return self.gen::<f64>();
+    }
+}
+

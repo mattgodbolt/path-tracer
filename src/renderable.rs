@@ -1,6 +1,6 @@
 use geometry::Ray;
 use material::Material;
-use math::Vec3d;
+use math::{Vec3d, F64Rng};
 
 pub struct Hit<'a> {
     pub pos: Vec3d,
@@ -13,4 +13,6 @@ pub struct Hit<'a> {
 pub trait Renderable : Send + Sync {
     fn intersect(&self, ray: &Ray) -> Option<f64>;
     fn get_hit(&self, ray: &Ray, dist: f64) -> Hit;
+    fn is_emissive(&self) -> bool;
+    fn random_pos(&self, rng: &mut F64Rng) -> Vec3d;
 }
