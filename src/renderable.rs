@@ -14,5 +14,6 @@ pub trait Renderable : Send + Sync {
     fn intersect(&self, ray: &Ray) -> Option<f64>;
     fn get_hit(&self, ray: &Ray, dist: f64) -> Hit;
     fn is_emissive(&self) -> bool;
-    fn random_pos(&self, rng: &mut F64Rng) -> Vec3d;
+    fn random_emission(&self, from: Vec3d, normal: Vec3d, rng: &mut F64Rng) -> (Vec3d, Vec3d);
+    fn identity(&self) -> u64;
 }

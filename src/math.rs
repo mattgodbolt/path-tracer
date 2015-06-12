@@ -29,6 +29,10 @@ impl Vec3d {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
     #[inline]
+    pub fn length_squared(self) -> f64 {
+        self.x * self.x + self.y * self.y + self.z * self.z
+    }
+    #[inline]
     pub fn new(x: f64, y: f64, z: f64) -> Vec3d {
         Vec3d { x: x, y: y, z: z }
     }

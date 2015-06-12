@@ -49,19 +49,22 @@ impl Scene {
         match hit_obj {
             None => { false },
             Some(obj) => {
-                if obj as *const Renderable == light as *const Renderable { true } else { false }
+                // Ideally, something like this:
+                // if obj as *const Renderable == light as *const Renderable { true } else { false }
+                // but we hit an ICE in rust 1.0.0
+                obj.identity() == light.identity() 
             }
         }
     }
 
-    pub fn sample_lights(&self, ray: &Ray, rng: &mut F64Rng) -> Vec3d {
-        let emission = Vec3d::zero();
+    pub fn sample_lights(&self, from: Vec3d, normal: Vec3d, rng: &mut F64Rng) -> Vec3d {
+        let mut emission = Vec3d::zero();
         for obj in self.objects.iter() {
             if !obj.is_emissive() { continue; }
-            let light_pos = obj.random_pos(rng);
-            let dir = (light_pos - ray.origin).normalized();
-            let ray = Ray::new(ray.origin, dir);
+            let (random_obj_dir, obj_emission) = obj.random_emission(from, normal, rng);
+            let ray = Ray::new(from, random_obj_dir);
             if self.shadow_cast(&ray, &**obj) {
+                emission = emission + obj_emission;
             }
         }
         emission

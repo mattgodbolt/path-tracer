@@ -45,7 +45,7 @@ pub fn radiance(scene: &Scene, ray: &Ray, depth: i32, rng: &mut F64Rng, emit: bo
                 // construct the new direction
                 let new_dir = u * r1.cos() * r2s + v * r1.sin() * r2s + w * (1.0 - r2).sqrt();
                 let new_ray = Ray::new(hit.pos, new_dir.normalized());
-                emission = emission + scene.sample_lights(&new_ray, rng);
+                emission = emission + colour * scene.sample_lights(hit.pos, hit.normal, rng);
                 colour = colour * radiance(scene, &new_ray, depth, rng, false);
             }, 
             Material::Specular => {

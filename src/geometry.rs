@@ -1,6 +1,7 @@
 use material::Material;
 use renderable::{Hit,Renderable};
 use math::{Vec3d,F64Rng};
+use std::f64::consts::PI;
 
 #[derive(Debug,Clone,Copy)]
 pub struct Ray {
@@ -16,7 +17,7 @@ impl Ray {
 
 pub struct Sphere {
     material: Material,
-    radius: f64,
+    radius_squared: f64,
     position: Vec3d,
     emission: Vec3d,
     colour: Vec3d,
@@ -30,7 +31,7 @@ impl Sphere {
     pub fn new(material: Material, radius: f64, position: Vec3d, emission: Vec3d, colour: Vec3d) -> Sphere {
         Sphere {
           material: material, 
-          radius: radius, 
+          radius_squared: radius * radius, 
           position: position,
           emission: emission,
           colour: colour,
@@ -54,7 +55,7 @@ impl Renderable for Sphere {
     fn intersect(&self, ray: &Ray) -> Option<f64> {
         let op = self.position - ray.origin;
         let b = op.dot(ray.direction);
-        let determinant = b * b - op.dot(op) + self.radius * self.radius;
+        let determinant = b * b - op.dot(op) + self.radius_squared;
         if determinant < 0.0 { return None; }
         let determinant = determinant.sqrt();
         let t1 = b - determinant;
@@ -69,8 +70,29 @@ impl Renderable for Sphere {
         }
     }
     fn is_emissive(&self) -> bool { self.emissive }
-    fn random_pos(&self, rng: &mut F64Rng) -> Vec3d {
-        Vec3d::zero()
+    fn random_emission(&self, from: Vec3d, normal: Vec3d, rng: &mut F64Rng) -> (Vec3d, Vec3d) {
+        let pos_to_center = self.position - from;
+        let len_squared = pos_to_center.length_squared();
+        let sw = pos_to_center;  // really seems this should be norm'd
+        // todo make an ONB func
+        let su = if sw.x.abs() > 0.1 { 
+            Vec3d::new(0.0, 1.0, 0.0)
+        } else {
+            Vec3d::new(1.0, 0.0, 0.0)
+        }.cross(sw).normalized();
+        let sv = sw.cross(su);
+        let cos_a_max = (1.0 - self.radius_squared / len_squared).sqrt();
+        let (eps1, eps2) = (rng.next(), rng.next());
+        let cos_a = 1.0 - eps1 + eps1 * cos_a_max;
+        let sin_a = (1.0 - cos_a * cos_a).sqrt();
+        let phi = 2.0 * PI * eps2;
+        let l = (su * phi.cos() * sin_a + sv * phi.sin() * sin_a + sw * cos_a).normalized();
+        let omega = 2.0 * PI * (1.0 - cos_a_max);
+        let emission = self.emission * l.dot(normal) * omega * (1.0 / PI);
+        (l, emission)
+    }
+    fn identity(&self) -> u64 {
+        self as *const Self as u64
     }
 }
 
