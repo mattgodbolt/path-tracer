@@ -72,8 +72,8 @@ impl Renderable for Sphere {
     fn is_emissive(&self) -> bool { self.emissive }
     fn random_emission(&self, from: Vec3d, normal: Vec3d, rng: &mut F64Rng) -> (Vec3d, Vec3d) {
         let pos_to_center = self.position - from;
-        let len_squared = pos_to_center.length_squared();
-        let sw = pos_to_center;  // really seems this should be norm'd
+        let dist_squared = pos_to_center.length_squared();
+        let sw = pos_to_center.normalized();
         // todo make an ONB func
         let su = if sw.x.abs() > 0.1 { 
             Vec3d::new(0.0, 1.0, 0.0)
@@ -81,7 +81,10 @@ impl Renderable for Sphere {
             Vec3d::new(1.0, 0.0, 0.0)
         }.cross(sw).normalized();
         let sv = sw.cross(su);
-        let cos_a_max = (1.0 - self.radius_squared / len_squared).sqrt();
+        // radius / dist = opp / adjacent = sin(angle), we need cos(angle)
+        // sin^2(a)+cos^2(a) = 1, so cos(a) = sqrt(1-sin^2(a)) = sqrt(1-opp^2/adj^2).
+        let cos_a_max = (1.0 - self.radius_squared / dist_squared).sqrt();
+        // Now the below is "just" a random cosine distribution, up to cos_a_max.
         let (eps1, eps2) = (rng.next(), rng.next());
         let cos_a = 1.0 - eps1 + eps1 * cos_a_max;
         let sin_a = (1.0 - cos_a * cos_a).sqrt();

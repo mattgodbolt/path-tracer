@@ -78,9 +78,9 @@ fn main() {
     scene.add(Box::new(Sphere::new(Material::Refractive, 16.5, 
                                    Vec3d::new(73.0, 16.5, 78.0),
                                    BLACK, WHITE)));
-    scene.add(Box::new(Sphere::new(Material::Diffuse, 600.0, 
-                                   Vec3d::new(50.0, 681.6 - 0.27, 81.6),
-                                   Vec3d::new(12.0, 12.0, 12.0), BLACK)));
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1.5, 
+                                   Vec3d::new(50.0, 81.6 - 16.5, 81.6),
+                                   Vec3d::new(400.0, 400.0, 400.0), BLACK)));
     let scene = Arc::new(scene);
 
     let camera_pos = Vec3d::new(50.0, 52.0, 295.6);
