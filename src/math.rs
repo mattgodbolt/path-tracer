@@ -33,12 +33,20 @@ impl Vec3d {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
     #[inline]
+    pub fn length(self) -> f64 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+    #[inline]
     pub fn new(x: f64, y: f64, z: f64) -> Vec3d {
         Vec3d { x: x, y: y, z: z }
     }
     #[inline]
     pub fn zero() -> Vec3d {
         Vec3d { x: 0.0, y: 0.0, z: 0.0 }
+    }
+    #[inline]
+    pub fn one() -> Vec3d {
+        Vec3d { x: 1.0, y: 1.0, z: 1.0 }
     }
     #[inline]
     pub fn cross(self, other: Vec3d) -> Vec3d {
@@ -55,12 +63,42 @@ impl Vec3d {
         else { self.z }
     }
     #[inline]
+    pub fn max_ordinal(self) -> u8 {
+        if self.x > self.y && self.x > self.z { 0 }
+        else if self.y > self.x && self.y > self.z { 1 }
+        else { 2 }
+    }
+    #[inline]
+    pub fn min_component(self) -> f64 {
+        if self.x < self.y && self.x < self.z { self.x }
+        else if self.y < self.x && self.y < self.z { self.y }
+        else { self.z }
+    }
+    #[inline]
+    pub fn min_ordinal(self) -> u8 {
+        if self.x < self.y && self.x < self.z { 0 }
+        else if self.y < self.x && self.y < self.z { 1 }
+        else { 2 }
+    }
+    #[inline]
+    pub fn abs(self) -> Vec3d {
+        Vec3d { x: self.x.abs(), y: self.y.abs(), z: self.z.abs() }
+    }
+    #[inline]
     pub fn neg(self) -> Vec3d {
         Vec3d { x: -self.x, y: -self.y, z: -self.z }
     }
     #[inline]
     pub fn clamp(self) -> Vec3d {
         Vec3d { x: self.x.clamp(), y: self.y.clamp(), z: self.z.clamp() }
+    }
+    #[inline]
+    pub fn min(self, other: Vec3d) -> Vec3d {
+        Vec3d { x: self.x.min(other.x), y: self.y.min(other.y), z: self.z.min(other.z) }
+    }
+    #[inline]
+    pub fn max(self, other: Vec3d) -> Vec3d {
+        Vec3d { x: self.x.max(other.x), y: self.y.max(other.y), z: self.z.max(other.z) }
     }
 }
 
@@ -98,6 +136,15 @@ impl Mul<f64> for Vec3d {
     #[inline]
     fn mul(self, other: f64) -> Vec3d {
         Vec3d { x: self.x * other, y: self.y * other, z: self.z * other }
+    }
+}
+
+impl Div for Vec3d {
+    type Output = Vec3d;
+
+    #[inline]
+    fn div(self, other: Vec3d) -> Vec3d {
+        Vec3d { x: self.x / other.x, y: self.y / other.y, z: self.z * other.z }
     }
 }
 
