@@ -9,7 +9,7 @@ readme = "README.md"
 
 [dependencies]
 argparse = "*"
-image = "0.3"
+image = "0.9"
 num_cpus = "0.2"
 rand = "0.3"
 threadpool = "0.1"
