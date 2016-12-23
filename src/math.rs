@@ -1,7 +1,7 @@
 use rand::{Rng, XorShiftRng};
-use std::ops::{Add,Sub,Mul,Div};
+use std::ops::{Add, Sub, Mul, Div};
 
-#[derive(Debug,Clone,Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Vec3d {
     pub x: f64,
     pub y: f64,
@@ -50,7 +50,7 @@ impl Vec3d {
     }
     #[inline]
     pub fn cross(self, other: Vec3d) -> Vec3d {
-        Vec3d { 
+        Vec3d {
             x: self.y * other.z - self.z * other.y,
             y: self.z * other.x - self.x * other.z,
             z: self.x * other.y - self.y * other.x
@@ -58,27 +58,19 @@ impl Vec3d {
     }
     #[inline]
     pub fn max_component(self) -> f64 {
-        if self.x > self.y && self.x > self.z { self.x }
-        else if self.y > self.x && self.y > self.z { self.y }
-        else { self.z }
+        if self.x > self.y && self.x > self.z { self.x } else if self.y > self.x && self.y > self.z { self.y } else { self.z }
     }
     #[inline]
     pub fn max_ordinal(self) -> u8 {
-        if self.x > self.y && self.x > self.z { 0 }
-        else if self.y > self.x && self.y > self.z { 1 }
-        else { 2 }
+        if self.x > self.y && self.x > self.z { 0 } else if self.y > self.x && self.y > self.z { 1 } else { 2 }
     }
     #[inline]
     pub fn min_component(self) -> f64 {
-        if self.x < self.y && self.x < self.z { self.x }
-        else if self.y < self.x && self.y < self.z { self.y }
-        else { self.z }
+        if self.x < self.y && self.x < self.z { self.x } else if self.y < self.x && self.y < self.z { self.y } else { self.z }
     }
     #[inline]
     pub fn min_ordinal(self) -> u8 {
-        if self.x < self.y && self.x < self.z { 0 }
-        else if self.y < self.x && self.y < self.z { 1 }
-        else { 2 }
+        if self.x < self.y && self.x < self.z { 0 } else if self.y < self.x && self.y < self.z { 1 } else { 2 }
     }
     #[inline]
     pub fn abs(self) -> Vec3d {
@@ -167,4 +159,3 @@ impl F64Rng for XorShiftRng {
         return self.gen::<f64>();
     }
 }
-

@@ -1,9 +1,9 @@
 use material::Material;
-use renderable::{Hit,Renderable};
-use math::{Vec3d,F64Rng};
+use renderable::{Hit, Renderable};
+use math::{Vec3d, F64Rng};
 use std::f64::consts::PI;
 
-#[derive(Debug,Clone,Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ray {
     pub origin: Vec3d,
     pub direction: Vec3d
@@ -25,17 +25,18 @@ pub struct Sphere {
 }
 
 unsafe impl Sync for Sphere {}
+
 unsafe impl Send for Sphere {}
 
 impl Sphere {
     pub fn new(material: Material, radius: f64, position: Vec3d, emission: Vec3d, colour: Vec3d) -> Sphere {
         Sphere {
-          material: material, 
-          radius_squared: radius * radius, 
-          position: position,
-          emission: emission,
-          colour: colour,
-          emissive: emission.max_component() > 0.0
+            material: material,
+            radius_squared: radius * radius,
+            position: position,
+            emission: emission,
+            colour: colour,
+            emissive: emission.max_component() > 0.0
         }
     }
 }
@@ -60,7 +61,7 @@ impl Renderable for Sphere {
         let determinant = determinant.sqrt();
         let t1 = b - determinant;
         let t2 = b + determinant;
-        const EPSILON : f64 = 0.0001;
+        const EPSILON: f64 = 0.0001;
         if t1 > EPSILON {
             Some(t1)
         } else if t2 > EPSILON {
@@ -75,7 +76,7 @@ impl Renderable for Sphere {
         let dist_squared = pos_to_center.length_squared();
         let sw = pos_to_center.normalized();
         // todo make an ONB func
-        let su = if sw.x.abs() > 0.1 { 
+        let su = if sw.x.abs() > 0.1 {
             Vec3d::new(0.0, 1.0, 0.0)
         } else {
             Vec3d::new(1.0, 0.0, 0.0)
@@ -102,10 +103,10 @@ impl Renderable for Sphere {
 #[test]
 fn intersection() {
     let sphere = Sphere::new(
-        Material::Diffuse, 
-        100.0, 
-        Vec3d::new(0.0, 0.0, 200.0), 
-        Vec3d::zero(), 
+        Material::Diffuse,
+        100.0,
+        Vec3d::new(0.0, 0.0, 200.0),
+        Vec3d::zero(),
         Vec3d::zero());
     let ray = Ray::new(Vec3d::zero(), Vec3d::new(0.0, 0.0, 1.0));
     match sphere.intersect(&ray) {

@@ -17,7 +17,7 @@ impl Scene {
     }
     pub fn intersect<'a>(&'a self, ray: &Ray) -> Option<Hit<'a>> {
         let mut hit_dist = f64::INFINITY;
-        let mut hit_obj : Option<&Box<Renderable>> = None;
+        let mut hit_obj: Option<&Box<Renderable>> = None;
         for obj in self.objects.iter() {
             if let Some(dist) = obj.intersect(&ray) {
                 if dist < hit_dist {
@@ -36,7 +36,7 @@ impl Scene {
     }
 
     fn shadow_cast(&self, ray: &Ray, light: &Renderable) -> bool {
-        let mut hit_obj : Option<&Renderable> = None;
+        let mut hit_obj: Option<&Renderable> = None;
         let mut hit_dist = f64::INFINITY;
         for obj in self.objects.iter() {
             if let Some(dist) = obj.intersect(&ray) {
@@ -52,7 +52,7 @@ impl Scene {
                 // Ideally, something like this:
                 // if obj as *const Renderable == light as *const Renderable { true } else { false }
                 // but we hit an ICE in rust 1.0.0
-                obj.identity() == light.identity() 
+                obj.identity() == light.identity()
             }
         }
     }

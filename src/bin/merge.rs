@@ -13,6 +13,7 @@ enum ImageError {
     IoError(io::Error),
     BadFileError(String)
 }
+
 use ImageError::*;
 
 impl From<io::Error> for ImageError {
@@ -20,11 +21,12 @@ impl From<io::Error> for ImageError {
         ImageError::IoError(e)
     }
 }
+
 type Result<T> = std::result::Result<T, ImageError>;
 
 struct PartialImage {
-    image : Vec<Vec<Vec3d>>,
-    samples : i32,
+    image: Vec<Vec<Vec3d>>,
+    samples: i32,
 }
 
 impl PartialImage {
@@ -34,7 +36,7 @@ impl PartialImage {
 
     fn add(self, other: PartialImage) -> PartialImage {
         let image = if self.samples == 0 { other.image } else {
-            let combined = self.image.iter().zip(other.image.iter()).map(|(x, y)| { 
+            let combined = self.image.iter().zip(other.image.iter()).map(|(x, y)| {
                 x.iter().zip(y.iter()).map(|(x, y)| { *x + *y }).collect()
             }).collect();
             combined
@@ -52,12 +54,12 @@ impl PartialImage {
 }
 
 fn load_file(name: &String) -> Result<PartialImage> {
-    let mut result : Vec<Vec<Vec3d>> = Vec::new();
-    let file = BufReader::new(try!(File::open(&name))); 
+    let mut result: Vec<Vec<Vec3d>> = Vec::new();
+    let file = BufReader::new(try!(File::open(&name)));
     println!("Loading '{}'", name);
     let mut line_iter = file.lines();
     let first_line = try!(line_iter.next().unwrap());
-    let first_line : Vec<usize> = first_line.split(' ').filter_map(|x| x.parse().ok()).collect();
+    let first_line: Vec<usize> = first_line.split(' ').filter_map(|x| x.parse().ok()).collect();
     // Rust experimental branch would let us match on the vector.
     if first_line.len() != 3 { return Err(BadFileError("Bad header".to_string())); }
     let width = first_line[0];
@@ -65,7 +67,7 @@ fn load_file(name: &String) -> Result<PartialImage> {
     let samples = first_line[2] as i32;
     println!("Found {} samples in {}x{} image", samples, width, height);
     for line in line_iter.filter_map(|x| x.ok()) {
-        let mut vecs : Vec<Vec3d> = Vec::new();
+        let mut vecs: Vec<Vec3d> = Vec::new();
         let mut split = line.split(' ').filter_map(|x| x.parse::<f64>().ok());
         loop {
             match (split.next(), split.next(), split.next()) {
@@ -89,18 +91,18 @@ fn load_file(name: &String) -> Result<PartialImage> {
 }
 
 fn main() {
-    let mut to_merge : Vec<String> = Vec::new();
+    let mut to_merge: Vec<String> = Vec::new();
     let mut output_filename = "image.png".to_string();
     {
         let mut ap = ArgumentParser::new();
         ap.set_description("Combine several sample images into one PNG");
-        ap.refer(&mut output_filename).add_option(&["-o", "--output"], Store, 
+        ap.refer(&mut output_filename).add_option(&["-o", "--output"], Store,
                                                   "Filename to output to");
         ap.refer(&mut to_merge).add_argument("files", Collect, "Files to merge")
             .required();
         ap.parse_args_or_exit();
     }
-    let accum : PartialImage = to_merge.iter()
+    let accum: PartialImage = to_merge.iter()
         .map(load_file)
         .map(|x| x.unwrap())
         .fold(PartialImage::empty(), |acc, item| { acc.add(item) });

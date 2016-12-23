@@ -1,4 +1,5 @@
 extern crate rand;
+
 mod geometry;
 mod material;
 mod math;
@@ -9,8 +10,6 @@ pub use self::geometry::*;
 pub use self::material::Material;
 pub use self::math::*;
 pub use self::scene::*;
-
-use self::renderable::Renderable;
 
 
 use std::f64::consts::PI;
@@ -24,7 +23,8 @@ pub fn radiance(scene: &Scene, ray: &Ray, depth: i32, rng: &mut F64Rng, emit: bo
         let depth = depth + 1;
         if depth > 5 {
             let rand = rng.next();
-            if rand < max_reflectance && depth < 500 { // Rust's stack blows up ~600 on my machine
+            if rand < max_reflectance && depth < 500 {
+                // Rust's stack blows up ~600 on my machine
                 colour = colour * (1.0 / max_reflectance);
             } else {
                 return emission;
@@ -47,7 +47,7 @@ pub fn radiance(scene: &Scene, ray: &Ray, depth: i32, rng: &mut F64Rng, emit: bo
                 let new_ray = Ray::new(hit.pos, new_dir.normalized());
                 emission = emission + colour * scene.sample_lights(hit.pos, n1, rng);
                 colour = colour * radiance(scene, &new_ray, depth, rng, false);
-            }, 
+            },
             Material::Specular => {
                 let reflection = ray.direction - hit.normal * 2.0 * hit.normal.dot(ray.direction);
                 let reflected_ray = Ray::new(hit.pos, reflection);
@@ -59,7 +59,7 @@ pub fn radiance(scene: &Scene, ray: &Ray, depth: i32, rng: &mut F64Rng, emit: bo
                 let into = hit.normal.dot(n1) > 0.0;
                 let nc = 1.0;
                 let nt = 1.5;
-                let nnt = if into { nc/nt } else { nt/nc };
+                let nnt = if into { nc / nt } else { nt / nc };
                 let ddn = ray.direction.dot(n1);
                 let cos2t = 1.0 - nnt * nnt * (1.0 - ddn * ddn);
                 if cos2t < 0.0 {
@@ -102,6 +102,6 @@ pub fn random_samp<T: F64Rng>(rng: &mut T) -> f64 {
 }
 
 pub fn to_int(v: f64) -> u8 {
-    let ch = (v.powf(1.0/2.2) * 255.0 + 0.5) as i64;
+    let ch = (v.powf(1.0 / 2.2) * 255.0 + 0.5) as i64;
     if ch < 0 { 0u8 } else if ch > 255 { 255u8 } else { ch as u8 }
 }

@@ -17,6 +17,7 @@ use std::sync::Arc;
 use std::sync::mpsc::channel;
 
 extern crate path_tracer;
+
 use path_tracer::*;
 
 
@@ -34,7 +35,7 @@ fn main() {
         ap.refer(&mut samps).add_option(&["-s", "--samples"], Store, "Number of samples");
         ap.refer(&mut height).add_option(&["-h", "--height"], Store, "Height");
         ap.refer(&mut width).add_option(&["-w", "--width"], Store, "Width");
-        ap.refer(&mut output_filename).add_option(&["-o", "--output"], Store, 
+        ap.refer(&mut output_filename).add_option(&["-o", "--output"], Store,
                                                   "Filename to output to");
         ap.refer(&mut num_threads).add_option(&["--num-threads"], Store,
                                               "Number of threads to use");
@@ -48,37 +49,37 @@ fn main() {
     if output_filename == "" {
         output_filename = if partial { "image.part" } else { "image.png" }.to_string();
     }
-    const BLACK : Vec3d = Vec3d { x: 0.0, y: 0.0, z: 0.0 };
-    const RED : Vec3d = Vec3d { x: 0.75, y: 0.25, z: 0.25 };
-    const BLUE : Vec3d = Vec3d { x: 0.25, y: 0.25, z: 0.75 };
-    const GREY : Vec3d = Vec3d { x: 0.75, y: 0.75, z: 0.75 };
-    const WHITE : Vec3d = Vec3d { x: 0.999, y: 0.999, z: 0.999 };
+    const BLACK: Vec3d = Vec3d { x: 0.0, y: 0.0, z: 0.0 };
+    const RED: Vec3d = Vec3d { x: 0.75, y: 0.25, z: 0.25 };
+    const BLUE: Vec3d = Vec3d { x: 0.25, y: 0.25, z: 0.75 };
+    const GREY: Vec3d = Vec3d { x: 0.75, y: 0.75, z: 0.75 };
+    const WHITE: Vec3d = Vec3d { x: 0.999, y: 0.999, z: 0.999 };
     let mut scene = Scene::new();
-    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
-                                   Vec3d::new(1e5+1.0, 40.8, 81.6),
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5,
+                                   Vec3d::new(1e5 + 1.0, 40.8, 81.6),
                                    BLACK, RED)));
-    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
-                                   Vec3d::new(-1e5+99.0, 40.8, 81.6),
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5,
+                                   Vec3d::new(-1e5 + 99.0, 40.8, 81.6),
                                    BLACK, BLUE)));
-    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5,
                                    Vec3d::new(50.0, 40.8, 1e5),
                                    BLACK, GREY)));
-    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5,
                                    Vec3d::new(50.0, 40.8, -1e5 + 170.0),
                                    BLACK, BLACK)));
-    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5,
                                    Vec3d::new(50.0, 1e5, 81.6),
                                    BLACK, GREY)));
-    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5, 
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1e5,
                                    Vec3d::new(50.0, -1e5 + 81.6, 81.6),
                                    BLACK, GREY)));
-    scene.add(Box::new(Sphere::new(Material::Specular, 16.5, 
+    scene.add(Box::new(Sphere::new(Material::Specular, 16.5,
                                    Vec3d::new(27.0, 16.5, 47.0),
                                    BLACK, WHITE)));
-    scene.add(Box::new(Sphere::new(Material::Refractive, 16.5, 
+    scene.add(Box::new(Sphere::new(Material::Refractive, 16.5,
                                    Vec3d::new(73.0, 16.5, 78.0),
                                    BLACK, WHITE)));
-    scene.add(Box::new(Sphere::new(Material::Diffuse, 1.5, 
+    scene.add(Box::new(Sphere::new(Material::Diffuse, 1.5,
                                    Vec3d::new(50.0, 81.6 - 16.5, 81.6),
                                    Vec3d::new(400.0, 400.0, 400.0), BLACK)));
     let scene = Arc::new(scene);
@@ -124,7 +125,7 @@ fn main() {
         });
     }
     let mut left = height;
-    let mut screen : Vec<Vec<Vec3d>> = Vec::new();
+    let mut screen: Vec<Vec<Vec3d>> = Vec::new();
     for _y in 0..height {
         screen.push(Vec::new());
     }
